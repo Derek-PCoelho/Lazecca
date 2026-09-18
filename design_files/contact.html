@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lazecca Numismática</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=11">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=11">
+  <link rel="icon" type="image/png" sizes="48x48" href="assets/favicon-48.png?v=11">
+  <link rel="icon" type="image/png" sizes="180x180" href="assets/favicon-180.png?v=11">
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/favicon-180.png?v=11">
+  <link rel="shortcut icon" href="assets/favicon-48.png?v=11">
+  <style>
+    .contact-layout {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 56px;
+      padding: 56px 0 96px;
+      align-items: start;
+    }
+    @media (max-width: 900px) { .contact-layout { grid-template-columns: 1fr; gap: 32px; } }
+
+    .contact-info-card {
+      background: var(--paper-soft);
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius-md);
+      padding: 32px;
+    }
+    .contact-info-card h3 {
+      font-family: var(--font-display);
+      font-size: 24px;
+      color: var(--burgundy-900);
+      margin-bottom: 24px;
+    }
+    .contact-methods { display: flex; flex-direction: column; gap: 20px; }
+    .contact-method {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+    .contact-method .cm-icon {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: var(--gold-100);
+      color: var(--burgundy-700);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .contact-method .cm-label {
+      font-size: 11px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--ink-500);
+      margin-bottom: 4px;
+    }
+    .contact-method .cm-value {
+      font-family: var(--font-display);
+      font-size: 20px;
+      color: var(--ink-950);
+    }
+    .contact-method a { color: inherit; }
+    .contact-method .cm-sub {
+      font-size: 13px;
+      color: var(--ink-500);
+      margin-top: 4px;
+    }
+
+    .whatsapp-card {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      padding: 24px;
+      margin-top: 24px;
+      background: linear-gradient(135deg, #128C7E, #075E54);
+      color: white;
+      border-radius: var(--radius-md);
+    }
+    .whatsapp-card .wa-icon {
+      width: 56px; height: 56px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.15);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .whatsapp-card h4 { font-family: var(--font-display); font-size: 20px; margin-bottom: 4px; }
+    .whatsapp-card p { font-size: 13px; opacity: 0.9; }
+
+    .contact-form-card {
+      background: var(--paper-soft);
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius-md);
+      padding: 40px;
+    }
+    .contact-form-card h2 {
+      font-family: var(--font-display);
+      font-size: 32px;
+      color: var(--burgundy-900);
+      margin-bottom: 8px;
+    }
+    .contact-form-card p {
+      color: var(--ink-500);
+      margin-bottom: 32px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 620px) { .form-grid { grid-template-columns: 1fr; } }
+    .form-grid .full { grid-column: 1 / -1; }
+
+    /* Map placeholder */
+    .map-block {
+      margin-top: 48px;
+      background: var(--cream);
+      aspect-ratio: 21/9;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      position: relative;
+      background-image:
+        linear-gradient(120deg, rgba(107,31,42,0.05) 0%, transparent 40%),
+        radial-gradient(circle at 50% 60%, rgba(201,169,97,0.15) 0%, transparent 50%),
+        repeating-linear-gradient(0deg, rgba(139,115,85,0.06) 0px, rgba(139,115,85,0.06) 1px, transparent 1px, transparent 24px),
+        repeating-linear-gradient(90deg, rgba(139,115,85,0.06) 0px, rgba(139,115,85,0.06) 1px, transparent 1px, transparent 24px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .map-pin {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: var(--burgundy-700);
+      color: var(--gold-500);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 6px 24px rgba(107,31,42,0.4);
+      position: relative;
+    }
+    .map-pin::after {
+      content: '';
+      position: absolute;
+      bottom: -14px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 20px; height: 20px;
+      background: rgba(107,31,42,0.2);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: translateX(-50%) scale(1); opacity: 0.6; }
+      100% { transform: translateX(-50%) scale(2.5); opacity: 0; }
+    }
+    .map-label {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, calc(-50% + 40px));
+      background: var(--paper-soft);
+      padding: 12px 20px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-md);
+      text-align: center;
+    }
+    .map-label h4 { font-family: var(--font-display); font-size: 16px; color: var(--ink-950); }
+    .map-label p { font-size: 12px; color: var(--ink-500); margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <div id="app" data-screen-label="09 Contato"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script src="js/data.js?v=11"></script>
+  <script type="text/babel" src="js/components.jsx?v=11"></script>
+
+  <script type="text/babel">
+    const Contact = () => {
+      const [sent, setSent] = React.useState(false);
+
+      return (
+        <>
+          <Header page="contact" />
+
+          <section className="page-hero">
+            <div className="container">
+              <div className="breadcrumb">
+                <a href="index.html">Início</a><span className="sep">/</span><span>Contato</span>
+              </div>
+              <h1 className="h1">Fale conosco</h1>
+              <p className="lede">Dúvidas sobre uma peça, avaliação de coleção ou apenas uma conversa sobre numismática — é sempre um prazer.</p>
+            </div>
+          </section>
+
+          <div className="container">
+            <div className="contact-layout">
+              {/* Info */}
+              <div>
+                <div className="contact-info-card">
+                  <h3>Canais Diretos</h3>
+                  <div className="contact-methods">
+                    <div className="contact-method">
+                      <div className="cm-icon"><Icon name="phone" size={20}/></div>
+                      <div>
+                        <div className="cm-label">Telefone</div>
+                        <div className="cm-value"><a href="tel:+558596553044">+55 (85) 9655-3044</a></div>
+                        <div className="cm-sub">Seg à Sex · 09h às 16h (horário de Brasília)</div>
+                      </div>
+                    </div>
+                    <div className="contact-method">
+                      <div className="cm-icon"><Icon name="mail" size={20}/></div>
+                      <div>
+                        <div className="cm-label">E-mail</div>
+                        <div className="cm-value"><a href="mailto:atendimento@lazecca.com.br">atendimento@lazecca.com.br</a></div>
+                        <div className="cm-sub">Resposta em até 24 horas úteis</div>
+                      </div>
+                    </div>
+                    <div className="contact-method">
+                      <div className="cm-icon"><Icon name="map-pin" size={20}/></div>
+                      <div>
+                        <div className="cm-label">Endereço</div>
+                        <div className="cm-value">R. do Pocinho, 33 · Sala 425</div>
+                        <div className="cm-sub">Centro · Fortaleza/CE · CEP 60055-120</div>
+                      </div>
+                    </div>
+                    <div className="contact-method">
+                      <div className="cm-icon"><Icon name="clock" size={20}/></div>
+                      <div>
+                        <div className="cm-label">Horário</div>
+                        <div className="cm-value">Seg. à Sex. · 09h - 16h</div>
+                        <div className="cm-sub">Visitas com hora marcada · Sábados por consulta</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="whatsapp-card">
+                  <div className="wa-icon"><Icon name="whatsapp" size={30}/></div>
+                  <div style={{flex:1}}>
+                    <h4>Prefere WhatsApp?</h4>
+                    <p>Atendimento rápido, sem filas, das 10h às 20h todos os dias.</p>
+                  </div>
+                  <a href="#" className="btn btn-gold btn-sm">Conversar</a>
+                </div>
+              </div>
+
+              {/* Form */}
+              <div className="contact-form-card">
+                {sent ? (
+                  <div style={{textAlign:'center', padding:'40px 20px'}}>
+                    <div style={{width:80, height:80, borderRadius:'50%', background:'var(--gold-100)', color:'var(--success)', display:'inline-flex', alignItems:'center', justifyContent:'center', marginBottom:24}}>
+                      <Icon name="check" size={40}/>
+                    </div>
+                    <h2 style={{marginBottom:12}}>Mensagem recebida!</h2>
+                    <p style={{color:'var(--ink-700)', fontSize:16, lineHeight:1.6}}>Obrigado por escrever. O Dr. Sergio responderá em até 24 horas úteis. Se for urgente, ligue no <b>(85) 9655-3044</b> ou fale no WhatsApp.</p>
+                    <button onClick={() => setSent(false)} className="btn btn-ghost" style={{marginTop:24}}>Enviar outra mensagem</button>
+                  </div>
+                ) : (
+                  <>
+                    <h2>Deixe sua mensagem</h2>
+                    <p>Preencha o formulário abaixo e responderemos com atenção.</p>
+                    <form onSubmit={(e) => { e.preventDefault(); setSent(true); }}>
+                      <div className="form-grid">
+                        <div className="field">
+                          <label>Seu nome</label>
+                          <input required placeholder="Nome completo" />
+                        </div>
+                        <div className="field">
+                          <label>E-mail</label>
+                          <input required type="email" placeholder="voce@email.com.br" />
+                        </div>
+                        <div className="field">
+                          <label>Telefone</label>
+                          <input placeholder="(00) 00000-0000" />
+                        </div>
+                        <div className="field">
+                          <label>Assunto</label>
+                          <select>
+                            <option>Dúvida sobre uma peça</option>
+                            <option>Avaliação de coleção</option>
+                            <option>Consignação para venda</option>
+                            <option>Autenticação externa</option>
+                            <option>Sugestão / Elogio</option>
+                            <option>Outro</option>
+                          </select>
+                        </div>
+                        <div className="field full">
+                          <label>Mensagem</label>
+                          <textarea rows="6" placeholder="Conte-nos como podemos ajudar..." required></textarea>
+                        </div>
+                        <div className="full" style={{display:'flex', alignItems:'center', gap:8, fontSize:13, color:'var(--ink-500)'}}>
+                          <input type="checkbox" defaultChecked style={{accentColor:'var(--burgundy-700)'}} />
+                          <span>Aceito o tratamento dos meus dados conforme a Política de Privacidade</span>
+                        </div>
+                        <div className="full" style={{marginTop:16}}>
+                          <button type="submit" className="btn btn-primary btn-lg btn-block">Enviar Mensagem <Icon name="chevron-right" size={14}/></button>
+                        </div>
+                      </div>
+                    </form>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Mapa */}
+            <div className="map-block">
+              <div className="map-pin"><Icon name="map-pin" size={20}/></div>
+              <div className="map-label">
+                <h4>La Zecca Numismática</h4>
+                <p>R. do Pocinho, 33 · Sala 425 · Centro · Fortaleza/CE</p>
+              </div>
+            </div>
+          </div>
+
+          <Footer />
+        </>
+      );
+    };
+
+    ReactDOM.createRoot(document.getElementById('app')).render(<Contact />);
+  </script>
+</body>
+</html>

@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lazecca Numismática</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=11">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=11">
+  <link rel="icon" type="image/png" sizes="48x48" href="assets/favicon-48.png?v=11">
+  <link rel="icon" type="image/png" sizes="180x180" href="assets/favicon-180.png?v=11">
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/favicon-180.png?v=11">
+  <link rel="shortcut icon" href="assets/favicon-48.png?v=11">
+  <style>
+    /* Home v2 — clean, spacious */
+    .hero {
+      position: relative;
+      background: var(--paper);
+      overflow: hidden;
+      min-height: 88vh;
+      display: flex;
+      align-items: center;
+    }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.05fr 1fr;
+      gap: 80px;
+      align-items: center;
+      padding: 96px 0;
+      width: 100%;
+    }
+    .hero-copy .eyebrow { margin-bottom: 24px; display: block; }
+    .hero-copy h1 {
+      font-family: var(--font-display);
+      font-size: clamp(48px, 6vw, 84px);
+      font-weight: 500;
+      letter-spacing: -0.025em;
+      line-height: 1.02;
+      color: var(--burgundy-900);
+      margin-bottom: 28px;
+    }
+    .hero-copy h1 em {
+      font-style: italic;
+      color: var(--gold-800);
+      display: inline-block;
+    }
+    .hero-copy .lede {
+      max-width: 480px;
+      margin-bottom: 40px;
+      font-size: 21px;
+    }
+    .hero-cta { display: flex; gap: 16px; flex-wrap: wrap; }
+
+    .hero-visual {
+      position: relative;
+      aspect-ratio: 3/4;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      background: #1a0708;
+      box-shadow: var(--shadow-lg), 0 24px 60px -20px rgba(46, 12, 17, 0.4);
+      max-width: 520px;
+      justify-self: end;
+    }
+    .hero-visual > img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      transition: transform 8s ease;
+    }
+    .hero-visual:hover > img { transform: scale(1.04); }
+    .hero-featured-tag {
+      position: absolute;
+      top: 24px;
+      left: 24px;
+      background: var(--burgundy-900);
+      color: var(--gold-500);
+      padding: 8px 14px;
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      border-radius: var(--radius);
+      z-index: 2;
+    }
+
+    @media (max-width: 900px) {
+      .hero { min-height: auto; }
+      .hero-grid { grid-template-columns: 1fr; gap: 40px; padding: 48px 0 64px; }
+      .hero-visual { max-width: 460px; margin: 0 auto; justify-self: center; }
+    }
+
+    /* Categorias — layout mais respirado */
+    .cat-grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+    }
+    @media (max-width: 900px) { .cat-grid-4 { grid-template-columns: repeat(2, 1fr); } }
+
+    /* Curator strip minimalista */
+    .curator-minimal {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 72px;
+      align-items: center;
+    }
+    .curator-minimal .portrait {
+      aspect-ratio: 3/4;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      background: var(--cream);
+      position: relative;
+    }
+    .curator-minimal .portrait::after {
+      content: '';
+      position: absolute;
+      inset: 12px;
+      border: 1px solid rgba(201,169,97,0.4);
+      border-radius: calc(var(--radius-lg) - 6px);
+      pointer-events: none;
+    }
+    .curator-minimal .portrait img { width: 100%; height: 100%; object-fit: cover; }
+    .curator-minimal blockquote {
+      font-family: var(--font-serif);
+      font-size: 30px;
+      font-style: italic;
+      line-height: 1.4;
+      color: var(--gold-500);
+      margin: 24px 0 32px;
+      padding-left: 24px;
+      border-left: 2px solid var(--gold-700);
+    }
+    .curator-minimal .signature {
+      font-family: var(--font-display);
+      font-size: 26px;
+      color: var(--gold-500);
+      font-style: italic;
+      margin-top: 32px;
+    }
+    .curator-minimal .signature-label {
+      font-size: 12px;
+      letter-spacing: 0.16em;
+      color: var(--parchment);
+      text-transform: uppercase;
+      margin-top: 6px;
+    }
+    @media (max-width: 900px) {
+      .curator-minimal { grid-template-columns: 1fr; gap: 32px; }
+      .curator-minimal .portrait { max-width: 340px; margin: 0 auto; }
+    }
+
+    /* CTA final — descoberta */
+    .cta-simple {
+      text-align: center;
+      padding: 96px 0;
+    }
+    .cta-simple h2 {
+      font-family: var(--font-display);
+      font-size: clamp(36px, 4.5vw, 56px);
+      color: var(--burgundy-900);
+      margin-bottom: 20px;
+      max-width: 720px;
+      margin-inline: auto;
+      line-height: 1.15;
+    }
+    .cta-simple h2 em { font-style: italic; color: var(--gold-800); }
+    .cta-simple p {
+      max-width: 520px;
+      margin: 0 auto 40px;
+      font-family: var(--font-serif);
+      font-size: 20px;
+      color: var(--ink-700);
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" data-screen-label="01 Home"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script src="js/data.js?v=11"></script>
+  <script type="text/babel" src="js/components.jsx?v=11"></script>
+
+  <script type="text/babel">
+    const { useEffect } = React;
+    const products = window.LZ_DATA.products;
+    const categories = window.LZ_DATA.categories;
+    const featured = products[0];
+
+    const Home = () => {
+      useEffect(() => {
+        // Ativa reveals no scroll
+        setTimeout(() => window.LZ_initReveal(), 60);
+      }, []);
+
+      return (
+        <>
+          <Header page="home" />
+
+          {/* ================= CURADOR (minimalista) — agora ABRE a home ================= */}
+          <section className="bg-burgundy">
+            <div className="container">
+              <div className="curator-minimal">
+                <div className="portrait fade-in">
+                  <img src="assets/dr-sergio-portrait.png" alt="Dr. Sergio Costa" />
+                </div>
+                <div>
+                  <span className="eyebrow fade-in-up" style={{color:'var(--gold-600)'}}>Quem cuida do seu acervo</span>
+                  <h2 className="h1 fade-in-up-2" style={{color:'var(--gold-500)', marginTop: 12}}>Dr. Sergio Costa</h2>
+                  <blockquote className="fade-in-up-3">
+                    "Uma moeda não é apenas metal. É um pequeno teatro, onde príncipes, guerras e mercados se representam."
+                  </blockquote>
+                  <p className="fade-in-up-3" style={{color:'var(--parchment)', fontSize: 17, lineHeight: 1.7, marginBottom: 8, maxWidth: 520}}>
+                    Numismata há 27 anos, doutor em História Econômica pela USP. Cada peça em nosso catálogo passa pelas suas mãos antes de chegar às suas.
+                  </p>
+                  <a href="about.html" className="btn btn-gold fade-in-up-3" style={{marginTop:28}}>Conheça nossa história</a>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* ================= HERO ================= */}
+          <section className="hero">
+            <div className="container">
+              <div className="hero-grid">
+                <div className="hero-copy">
+                  <span className="eyebrow reveal">Numismática de curadoria · desde 1998</span>
+                  <h1 className="reveal">Cada moeda é <em>uma história</em> que o tempo esqueceu de contar.</h1>
+                  <p className="lede reveal">Peças autenticadas e apresentadas pelo Dr. Sergio Costa. Da colônia ao século XX, escolhidas com rigor para o seu acervo.</p>
+                  <div className="hero-cta reveal">
+                    <a href="catalog.html" className="btn btn-primary btn-lg">Explorar o Acervo</a>
+                    <a href="about.html" className="btn btn-ghost btn-lg">Sobre o Dr. Sergio</a>
+                  </div>
+                </div>
+
+                <div className="hero-visual reveal">
+                  <span className="hero-featured-tag">Peça em Destaque</span>
+                  <img src="assets/hero-featured-coin.png" alt="20.000 Réis Ouro — Império, 1889" />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* ================= CATEGORIAS ================= */}
+          <section className="bg-paper-soft">
+            <div className="container">
+              <div className="section-head reveal">
+                <div className="section-title">
+                  <span className="eyebrow">O Acervo</span>
+                  <h2 className="h2">Explore por categoria</h2>
+                </div>
+                <a href="catalog.html" className="link-more">Ver tudo <Icon name="chevron-right" size={14}/></a>
+              </div>
+              <div className="cat-grid-4 reveal-stagger">
+                {categories.slice(0, 8).map(cat => (
+                  <a key={cat.slug} href={`catalog.html?cat=${cat.slug}`} className="cat-chip">
+                    <div className="cat-icon"><Icon name={cat.icon} size={26}/></div>
+                    <div className="cat-name">{cat.name}</div>
+                    <div className="cat-count">{cat.count} peças</div>
+                  </a>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* ================= CTA FINAL ================= */}
+          <section className="cta-simple">
+            <div className="container">
+              <div className="reveal">
+                <span className="eyebrow eyebrow-burgundy">Comece sua coleção</span>
+                <h2>Uma peça de cada vez, <em>um século de cada vez.</em></h2>
+                <p>Explore o catálogo completo, filtre pelo que você procura e conte com nosso atendimento para escolher com calma.</p>
+                <div style={{display:'flex', gap:16, justifyContent:'center', flexWrap:'wrap'}}>
+                  <a href="catalog.html" className="btn btn-primary btn-lg">Ver todas as peças</a>
+                  <a href="contact.html" className="btn btn-outline btn-lg">Falar com o Dr. Sergio</a>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <Footer />
+        </>
+      );
+    };
+
+    ReactDOM.createRoot(document.getElementById('app')).render(<Home />);
+  </script>
+</body>
+</html>

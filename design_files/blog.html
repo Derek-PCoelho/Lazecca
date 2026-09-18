@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lazecca Numismática</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=11">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=11">
+  <link rel="icon" type="image/png" sizes="48x48" href="assets/favicon-48.png?v=11">
+  <link rel="icon" type="image/png" sizes="180x180" href="assets/favicon-180.png?v=11">
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/favicon-180.png?v=11">
+  <link rel="shortcut icon" href="assets/favicon-48.png?v=11">
+  <style>
+    .blog-featured {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 48px;
+      align-items: center;
+      padding: 48px 0 32px;
+    }
+    @media (max-width: 900px) { .blog-featured { grid-template-columns: 1fr; } }
+    .blog-featured-cover {
+      aspect-ratio: 4/3;
+      overflow: hidden;
+      border-radius: var(--radius-lg);
+      background: var(--cream);
+    }
+    .blog-featured-cover img { width: 100%; height: 100%; object-fit: cover; }
+    .blog-featured-copy h2 {
+      font-family: var(--font-display);
+      font-size: clamp(32px, 4vw, 44px);
+      line-height: 1.15;
+      color: var(--ink-950);
+      margin: 12px 0 20px;
+    }
+
+    .blog-filters {
+      display: flex;
+      gap: 8px;
+      padding: 24px 0;
+      border-top: 1px solid var(--line-soft);
+      border-bottom: 1px solid var(--line-soft);
+      margin-bottom: 48px;
+      flex-wrap: wrap;
+    }
+    .blog-filter {
+      padding: 8px 16px;
+      border: 1px solid var(--line);
+      background: var(--paper-soft);
+      border-radius: var(--radius-full);
+      font-size: 13px;
+      color: var(--ink-700);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .blog-filter:hover { border-color: var(--gold-700); }
+    .blog-filter.active {
+      background: var(--burgundy-700);
+      color: var(--gold-500);
+      border-color: var(--burgundy-700);
+    }
+
+    .blog-list {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 40px;
+    }
+    @media (max-width: 720px) { .blog-list { grid-template-columns: 1fr; } }
+    .blog-post {
+      display: flex;
+      flex-direction: column;
+    }
+    .blog-post .cover {
+      aspect-ratio: 16/10;
+      overflow: hidden;
+      border-radius: var(--radius-md);
+      background: var(--cream);
+      margin-bottom: 20px;
+    }
+    .blog-post .cover img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s ease; }
+    .blog-post:hover .cover img { transform: scale(1.05); }
+    .blog-post .cat {
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--gold-800);
+      margin-bottom: 10px;
+    }
+    .blog-post h3 {
+      font-family: var(--font-display);
+      font-size: 26px;
+      line-height: 1.2;
+      color: var(--ink-950);
+      margin-bottom: 12px;
+    }
+    .blog-post p {
+      color: var(--ink-500);
+      font-size: 15px;
+      line-height: 1.65;
+      margin-bottom: 16px;
+    }
+    .blog-post .meta {
+      font-size: 12px;
+      color: var(--ink-400);
+      letter-spacing: 0.08em;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .blog-post .meta .sep { opacity: 0.5; }
+  </style>
+</head>
+<body>
+  <div id="app" data-screen-label="08 Blog"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script src="js/data.js?v=11"></script>
+  <script type="text/babel" src="js/components.jsx?v=11"></script>
+
+  <script type="text/babel">
+    const { useState } = React;
+    const posts = window.LZ_DATA.posts;
+    const cats = ['Todos', 'Guias', 'História', 'Estética', 'Curiosidades'];
+    const featured = posts[0];
+    const rest = posts.slice(1);
+
+    const Blog = () => {
+      const [cat, setCat] = useState('Todos');
+      const filtered = cat === 'Todos' ? rest : rest.filter(p => p.category === cat);
+
+      return (
+        <>
+          <Header page="blog" />
+
+          <section className="page-hero">
+            <div className="container">
+              <div className="breadcrumb">
+                <a href="index.html">Início</a><span className="sep">/</span><span>Diário Numismático</span>
+              </div>
+              <h1 className="h1">Diário Numismático</h1>
+              <p className="lede">Guias práticos, histórias curiosas e dicas para quem está começando ou já tem uma coleção. Sem termos complicados, só conhecimento acessível.</p>
+            </div>
+          </section>
+
+          <div className="container">
+            {/* Featured */}
+            <a href={`blog-post.html?p=${featured.slug}`} className="blog-featured">
+              <div className="blog-featured-cover"><img src={featured.cover} alt={featured.title}/></div>
+              <div className="blog-featured-copy">
+                <span className="eyebrow">Destaque · {featured.category}</span>
+                <h2>{featured.title}</h2>
+                <p style={{fontFamily:'var(--font-serif)', fontSize:19, fontStyle:'italic', lineHeight:1.6, color:'var(--ink-700)', marginBottom:24}}>
+                  {featured.excerpt}
+                </p>
+                <div style={{fontSize:12, color:'var(--ink-400)', letterSpacing:'0.08em', marginBottom:24}}>
+                  Por <b style={{color:'var(--ink-700)'}}>{featured.author}</b> · {featured.date} · {featured.readTime} de leitura
+                </div>
+                <span className="btn btn-primary">Ler artigo <Icon name="chevron-right" size={14}/></span>
+              </div>
+            </a>
+
+            <div className="blog-filters">
+              {cats.map(c => (
+                <button key={c} className={`blog-filter ${c === cat ? 'active' : ''}`} onClick={() => setCat(c)}>{c}</button>
+              ))}
+            </div>
+
+            <div className="blog-list">
+              {filtered.map(post => (
+                <a key={post.slug} href={`blog-post.html?p=${post.slug}`} className="blog-post">
+                  <div className="cover"><img src={post.cover} alt={post.title}/></div>
+                  <div className="cat">{post.category}</div>
+                  <h3>{post.title}</h3>
+                  <p>{post.excerpt}</p>
+                  <div className="meta">
+                    <span>{post.date}</span>
+                    <span className="sep">·</span>
+                    <span>{post.readTime} de leitura</span>
+                    <span className="sep">·</span>
+                    <span>{post.author}</span>
+                  </div>
+                </a>
+              ))}
+            </div>
+
+            {/* Newsletter inline */}
+            <section style={{marginTop:80, padding:'48px 0'}}>
+              <div style={{background:'var(--cream)', padding:'48px', borderRadius:'var(--radius-lg)', textAlign:'center'}}>
+                <span className="eyebrow">Assine nossa newsletter</span>
+                <h2 className="h2" style={{marginTop:12, marginBottom:12}}>Novidades toda semana no seu e-mail</h2>
+                <p style={{color:'var(--ink-700)', maxWidth:520, margin:'0 auto 24px'}}>Novos artigos, peças recém-chegadas e dicas do Dr. Sergio. Curto, sem spam — só conteúdo bom.</p>
+                <form onSubmit={e => e.preventDefault()} style={{display:'flex', gap:8, maxWidth:440, margin:'0 auto', flexWrap:'wrap'}}>
+                  <input placeholder="seu@email.com.br" style={{flex:1, minWidth:200, padding:'14px 16px', borderRadius:'var(--radius)', border:'1px solid var(--line)', background:'var(--paper-soft)'}}/>
+                  <button className="btn btn-primary btn-lg">Assinar</button>
+                </form>
+              </div>
+            </section>
+          </div>
+
+          <Footer />
+        </>
+      );
+    };
+
+    ReactDOM.createRoot(document.getElementById('app')).render(<Blog />);
+  </script>
+</body>
+</html>

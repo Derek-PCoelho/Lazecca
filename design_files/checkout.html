@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lazecca Numismática</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=11">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=11">
+  <link rel="icon" type="image/png" sizes="48x48" href="assets/favicon-48.png?v=11">
+  <link rel="icon" type="image/png" sizes="180x180" href="assets/favicon-180.png?v=11">
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/favicon-180.png?v=11">
+  <link rel="shortcut icon" href="assets/favicon-48.png?v=11">
+  <style>
+    /* Checkout header (simplificado) */
+    .checkout-header {
+      background: var(--paper-soft);
+      border-bottom: 1px solid var(--line-soft);
+      padding: 20px 0;
+    }
+    .checkout-header-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .checkout-header-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .checkout-header-logo img { width: 44px; height: 44px; border-radius: 50%; }
+    .checkout-header-logo-text {
+      font-family: var(--font-display);
+      font-size: 22px;
+      letter-spacing: 0.08em;
+      color: var(--burgundy-800);
+    }
+    .checkout-secure {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--success);
+      font-weight: 500;
+    }
+
+    /* Steps */
+    .steps-bar {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      padding: 32px 0;
+      background: var(--cream);
+      border-bottom: 1px solid var(--line-soft);
+    }
+    .step-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 20px;
+    }
+    .step-item + .step-item::before {
+      content: '';
+      width: 40px;
+      height: 1px;
+      background: var(--line);
+      margin-right: 12px;
+    }
+    .step-num {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: var(--paper-soft);
+      color: var(--ink-500);
+      border: 1px solid var(--line);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 13px;
+    }
+    .step-item.active .step-num {
+      background: var(--burgundy-700);
+      color: var(--gold-500);
+      border-color: var(--burgundy-700);
+    }
+    .step-item.done .step-num {
+      background: var(--success);
+      color: var(--paper-soft);
+      border-color: var(--success);
+    }
+    .step-label {
+      font-size: 13px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-500);
+    }
+    .step-item.active .step-label { color: var(--burgundy-700); font-weight: 600; }
+
+    .checkout-page { padding: 48px 0 96px; }
+    .checkout-layout {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 48px;
+      align-items: start;
+    }
+    @media (max-width: 900px) { .checkout-layout { grid-template-columns: 1fr; } }
+
+    .checkout-panel {
+      background: var(--paper-soft);
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius-md);
+      padding: 32px;
+      margin-bottom: 24px;
+    }
+    .checkout-panel h3 {
+      font-family: var(--font-display);
+      font-size: 22px;
+      color: var(--burgundy-900);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .checkout-panel h3 .n {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      background: var(--burgundy-700);
+      color: var(--gold-500);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .field-row.three { grid-template-columns: 1fr 1fr 1fr; }
+    .field-row.wide-first { grid-template-columns: 2fr 1fr; }
+    .field-row.narrow-first { grid-template-columns: 1fr 2fr; }
+    @media (max-width: 620px) { .field-row, .field-row.three, .field-row.wide-first, .field-row.narrow-first { grid-template-columns: 1fr; } }
+
+    /* Payment methods */
+    .pay-methods {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    @media (max-width: 620px) { .pay-methods { grid-template-columns: 1fr; } }
+    .pay-method {
+      padding: 20px 16px;
+      border: 2px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--paper);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: all 0.15s;
+    }
+    .pay-method:hover { border-color: var(--gold-600); }
+    .pay-method.active {
+      border-color: var(--burgundy-700);
+      background: var(--paper-soft);
+      box-shadow: inset 0 0 0 2px var(--burgundy-700);
+    }
+    .pay-method .radio {
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      border: 2px solid var(--line);
+      flex-shrink: 0;
+      position: relative;
+    }
+    .pay-method.active .radio { border-color: var(--burgundy-700); }
+    .pay-method.active .radio::after {
+      content: '';
+      position: absolute;
+      inset: 3px;
+      background: var(--burgundy-700);
+      border-radius: 50%;
+    }
+    .pay-method .pm-title {
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--ink-950);
+    }
+    .pay-method .pm-sub {
+      font-size: 11px;
+      color: var(--ink-500);
+      margin-top: 2px;
+    }
+
+    /* Summary items */
+    .summary {
+      background: var(--paper-soft);
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius-md);
+      padding: 28px;
+      position: sticky;
+      top: 32px;
+    }
+    .summary h3 {
+      font-family: var(--font-display);
+      font-size: 20px;
+      color: var(--burgundy-900);
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--line-soft);
+    }
+    .summary .cart-mini {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .cart-mini-item {
+      display: grid;
+      grid-template-columns: 60px 1fr auto;
+      gap: 12px;
+      align-items: center;
+    }
+    .cart-mini-item .thumb {
+      aspect-ratio: 1;
+      background: var(--cream);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .cart-mini-item .thumb img { width: 82%; height: 82%; object-fit: contain; }
+    .cart-mini-item .thumb .qty-badge {
+      position: absolute;
+      top: -6px; right: -6px;
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      background: var(--burgundy-700);
+      color: var(--gold-500);
+      font-size: 11px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .cart-mini-item .name { font-size: 13px; color: var(--ink-950); font-weight: 500; line-height: 1.35; }
+    .cart-mini-item .meta { font-size: 11px; color: var(--ink-500); margin-top: 2px; }
+    .cart-mini-item .item-price {
+      font-family: var(--font-display);
+      font-size: 15px;
+      color: var(--burgundy-800);
+      font-variant-numeric: tabular-nums;
+    }
+    .summary-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px; }
+    .summary-row.total {
+      margin-top: 12px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line-soft);
+      font-size: 15px;
+    }
+    .summary-row.total .val {
+      font-family: var(--font-display);
+      font-size: 26px;
+      color: var(--burgundy-900);
+    }
+  </style>
+</head>
+<body>
+  <div id="app" data-screen-label="05 Checkout"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script src="js/data.js?v=11"></script>
+  <script type="text/babel" src="js/components.jsx?v=11"></script>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    const Checkout = () => {
+      const [cart, setCart] = useState(LZ.getCart());
+      const [payment, setPayment] = useState('pix');
+
+      useEffect(() => {
+        if (cart.length === 0) {
+          LZ.addToCart('p001');
+          LZ.addToCart('p004', 2);
+          setCart(LZ.getCart());
+        }
+      }, []);
+
+      const items = cart.map(c => ({ ...c, product: LZ.getProduct(c.id) })).filter(i => i.product);
+      const subtotal = items.reduce((s, i) => s + i.product.price * i.qty, 0);
+      const shipping = subtotal > 500 ? 0 : 24.9;
+      const discount = payment === 'pix' ? subtotal * 0.05 : 0;
+      const total = subtotal + shipping - discount;
+
+      return (
+        <>
+          {/* Header simplificado */}
+          <header className="checkout-header">
+            <div className="container checkout-header-inner">
+              <a href="index.html" className="checkout-header-logo">
+                <img src="assets/logo-emblem.png" alt="La Zecca"/>
+                <span className="checkout-header-logo-text">LA ZECCA</span>
+              </a>
+              <div className="checkout-secure">
+                <Icon name="shield" size={16}/> Compra 100% Segura · SSL
+              </div>
+            </div>
+          </header>
+
+          <div className="steps-bar">
+            <div className="step-item done">
+              <span className="step-num"><Icon name="check" size={14}/></span>
+              <span className="step-label">Carrinho</span>
+            </div>
+            <div className="step-item active">
+              <span className="step-num">2</span>
+              <span className="step-label">Identificação & Entrega</span>
+            </div>
+            <div className="step-item">
+              <span className="step-num">3</span>
+              <span className="step-label">Pagamento</span>
+            </div>
+            <div className="step-item">
+              <span className="step-num">4</span>
+              <span className="step-label">Confirmação</span>
+            </div>
+          </div>
+
+          <div className="checkout-page">
+            <div className="container">
+              <div className="checkout-layout">
+                <div>
+                  {/* Identificação */}
+                  <div className="checkout-panel">
+                    <h3><span className="n">1</span> Identificação</h3>
+                    <div className="field-row">
+                      <div className="field">
+                        <label>Nome completo</label>
+                        <input placeholder="Como no documento" />
+                      </div>
+                      <div className="field">
+                        <label>CPF / CNPJ</label>
+                        <input placeholder="000.000.000-00" />
+                      </div>
+                    </div>
+                    <div className="field-row">
+                      <div className="field">
+                        <label>E-mail</label>
+                        <input type="email" placeholder="voce@email.com.br" />
+                      </div>
+                      <div className="field">
+                        <label>Telefone (WhatsApp)</label>
+                        <input placeholder="(11) 90000-0000" />
+                      </div>
+                    </div>
+                    <div style={{display:'flex', gap:8, alignItems:'center', marginTop:16, fontSize:13, color:'var(--ink-500)'}}>
+                      <input type="checkbox" id="ck-news" defaultChecked style={{accentColor:'var(--burgundy-700)'}}/>
+                      <label htmlFor="ck-news">Quero receber o Correio do Curador</label>
+                    </div>
+                  </div>
+
+                  {/* Endereço */}
+                  <div className="checkout-panel">
+                    <h3><span className="n">2</span> Endereço de Entrega</h3>
+                    <div className="field-row narrow-first">
+                      <div className="field">
+                        <label>CEP</label>
+                        <input placeholder="00000-000" />
+                      </div>
+                      <div className="field">
+                        <label>Rua / Avenida</label>
+                        <input placeholder="Rua ..." />
+                      </div>
+                    </div>
+                    <div className="field-row narrow-first">
+                      <div className="field">
+                        <label>Número</label>
+                        <input placeholder="000" />
+                      </div>
+                      <div className="field">
+                        <label>Complemento</label>
+                        <input placeholder="Apto, casa..." />
+                      </div>
+                    </div>
+                    <div className="field-row">
+                      <div className="field">
+                        <label>Bairro</label>
+                        <input placeholder="Bairro" />
+                      </div>
+                      <div className="field">
+                        <label>Cidade</label>
+                        <input placeholder="Cidade" />
+                      </div>
+                    </div>
+                    <div className="field-row three">
+                      <div className="field">
+                        <label>Estado</label>
+                        <select><option>SP</option><option>RJ</option><option>MG</option></select>
+                      </div>
+                      <div className="field" style={{gridColumn:'span 2'}}>
+                        <label>Modalidade de envio</label>
+                        <select>
+                          <option>PAC · 5-7 dias úteis · R$ 24,90</option>
+                          <option>SEDEX · 2-3 dias úteis · R$ 42,00</option>
+                          <option>SEDEX 10 · 1 dia útil · R$ 68,00</option>
+                          <option>Retirar na Loja (Centro/SP) · Grátis</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Pagamento */}
+                  <div className="checkout-panel">
+                    <h3><span className="n">3</span> Pagamento</h3>
+
+                    <div className="pay-methods">
+                      <div className={`pay-method ${payment === 'pix' ? 'active' : ''}`} onClick={() => setPayment('pix')}>
+                        <span className="radio"></span>
+                        <div>
+                          <div className="pm-title"><Icon name="pix" size={14} style={{verticalAlign:'middle', marginRight:4}}/> PIX</div>
+                          <div className="pm-sub">5% off · aprovação imediata</div>
+                        </div>
+                      </div>
+                      <div className={`pay-method ${payment === 'card' ? 'active' : ''}`} onClick={() => setPayment('card')}>
+                        <span className="radio"></span>
+                        <div>
+                          <div className="pm-title">Cartão de Crédito</div>
+                          <div className="pm-sub">Até 10× sem juros</div>
+                        </div>
+                      </div>
+                      <div className={`pay-method ${payment === 'boleto' ? 'active' : ''}`} onClick={() => setPayment('boleto')}>
+                        <span className="radio"></span>
+                        <div>
+                          <div className="pm-title">Boleto Bancário</div>
+                          <div className="pm-sub">Vence em 3 dias úteis</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {payment === 'card' && (
+                      <>
+                        <div className="field-row">
+                          <div className="field">
+                            <label>Número do cartão</label>
+                            <input placeholder="0000 0000 0000 0000" />
+                          </div>
+                          <div className="field">
+                            <label>Nome impresso</label>
+                            <input placeholder="Como no cartão" />
+                          </div>
+                        </div>
+                        <div className="field-row three">
+                          <div className="field">
+                            <label>Validade</label>
+                            <input placeholder="MM/AA" />
+                          </div>
+                          <div className="field">
+                            <label>CVV</label>
+                            <input placeholder="000" />
+                          </div>
+                          <div className="field">
+                            <label>Parcelas</label>
+                            <select>
+                              {[1,2,3,4,5,6,7,8,9,10].map(n => (
+                                <option key={n}>{n}× de {LZ.formatPrice(total / n)} sem juros</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                    {payment === 'pix' && (
+                      <div style={{background:'var(--gold-100)', padding: '20px', borderRadius: 'var(--radius)', display:'flex', gap:16, alignItems:'center'}}>
+                        <div style={{width:60, height:60, background:'white', borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', color:'var(--burgundy-900)'}}>
+                          <Icon name="pix" size={32}/>
+                        </div>
+                        <div>
+                          <div style={{fontWeight:600, color:'var(--burgundy-900)', marginBottom:4}}>Você receberá o QR Code após confirmar</div>
+                          <div style={{fontSize:13, color:'var(--ink-700)'}}>O pagamento é confirmado em segundos e sua peça é reservada imediatamente.</div>
+                        </div>
+                      </div>
+                    )}
+                    {payment === 'boleto' && (
+                      <div style={{background:'var(--cream)', padding: '20px', borderRadius: 'var(--radius)', fontSize:13, color:'var(--ink-700)'}}>
+                        O boleto será gerado após a confirmação. Prazo de compensação de até 3 dias úteis. Sua peça fica reservada durante esse período.
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Summary */}
+                <aside className="summary">
+                  <h3>Seu Pedido</h3>
+                  <div className="cart-mini">
+                    {items.map(item => (
+                      <div key={item.product.id} className="cart-mini-item">
+                        <div className="thumb">
+                          <img src={item.product.image} alt={item.product.name}/>
+                          {item.qty > 1 && <span className="qty-badge">{item.qty}</span>}
+                        </div>
+                        <div>
+                          <div className="name">{item.product.name}</div>
+                          <div className="meta">{item.product.year > 0 && item.product.year} · {item.product.state}</div>
+                        </div>
+                        <div className="item-price">{LZ.formatPrice(item.product.price * item.qty)}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{borderTop:'1px solid var(--line-soft)', paddingTop:12}}>
+                    <div className="summary-row"><span>Subtotal</span><span>{LZ.formatPrice(subtotal)}</span></div>
+                    <div className="summary-row"><span>Frete</span><span>{shipping === 0 ? <b style={{color:'var(--success)'}}>Grátis</b> : LZ.formatPrice(shipping)}</span></div>
+                    {discount > 0 && <div className="summary-row"><span>Desconto PIX (5%)</span><span style={{color:'var(--danger)'}}>-{LZ.formatPrice(discount)}</span></div>}
+                    <div className="summary-row total"><span><b>Total</b></span><span className="val">{LZ.formatPrice(total)}</span></div>
+                  </div>
+
+                  <button className="btn btn-primary btn-lg btn-block" style={{marginTop:20}}>
+                    Concluir Pedido <Icon name="check" size={16}/>
+                  </button>
+                  <p style={{fontSize:12, color:'var(--ink-500)', textAlign:'center', marginTop:12, lineHeight:1.5}}>
+                    Ao concluir, você concorda com os <a href="#" style={{color:'var(--burgundy-700)'}}>Termos de Uso</a> e a <a href="#" style={{color:'var(--burgundy-700)'}}>Política de Privacidade</a>.
+                  </p>
+                </aside>
+              </div>
+            </div>
+          </div>
+        </>
+      );
+    };
+
+    ReactDOM.createRoot(document.getElementById('app')).render(<Checkout />);
+  </script>
+</body>
+</html>

@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lazecca Numismática</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=11">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=11">
+  <link rel="icon" type="image/png" sizes="48x48" href="assets/favicon-48.png?v=11">
+  <link rel="icon" type="image/png" sizes="180x180" href="assets/favicon-180.png?v=11">
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/favicon-180.png?v=11">
+  <link rel="shortcut icon" href="assets/favicon-48.png?v=11">
+  <style>
+    .process-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+      margin-top: 48px;
+    }
+    @media (max-width: 900px) { .process-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 520px) { .process-grid { grid-template-columns: 1fr; } }
+
+    .process-step {
+      background: var(--paper-soft);
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius-md);
+      padding: 32px 24px;
+      text-align: center;
+      position: relative;
+    }
+    .process-step .step-num {
+      position: absolute;
+      top: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: var(--burgundy-700);
+      color: var(--gold-500);
+      font-family: var(--font-display);
+      font-size: 20px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 4px solid var(--paper);
+    }
+    .process-step h3 {
+      font-family: var(--font-display);
+      font-size: 20px;
+      color: var(--burgundy-800);
+      margin: 24px 0 12px;
+    }
+    .process-step p { font-size: 14px; color: var(--ink-500); line-height: 1.6; }
+
+    /* Certificate card */
+    .certificate-showcase {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 64px;
+      align-items: center;
+    }
+    @media (max-width: 900px) { .certificate-showcase { grid-template-columns: 1fr; gap: 32px; } }
+
+    .certificate-visual {
+      aspect-ratio: 5/7;
+      background: linear-gradient(135deg, #F5EBD1 0%, #E5D8BF 100%);
+      border: 3px double var(--gold-800);
+      padding: 40px 32px;
+      border-radius: var(--radius);
+      position: relative;
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      flex-direction: column;
+      max-width: 480px;
+    }
+    .certificate-visual::before {
+      content: '';
+      position: absolute;
+      inset: 8px;
+      border: 1px solid var(--gold-800);
+      opacity: 0.4;
+      border-radius: 4px;
+      pointer-events: none;
+    }
+    .cert-emblem {
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      overflow: hidden;
+      margin: 0 auto 16px;
+      border: 2px solid var(--gold-800);
+    }
+    .cert-emblem img { width: 100%; height: 100%; object-fit: cover; }
+    .cert-title {
+      font-family: var(--font-display);
+      font-size: 28px;
+      color: var(--burgundy-900);
+      text-align: center;
+      letter-spacing: 0.06em;
+      margin-bottom: 8px;
+    }
+    .cert-subtitle {
+      text-align: center;
+      font-family: var(--font-serif);
+      font-style: italic;
+      font-size: 15px;
+      color: var(--ink-500);
+      margin-bottom: 28px;
+    }
+    .cert-body {
+      font-family: var(--font-serif);
+      font-size: 15px;
+      line-height: 1.7;
+      color: var(--ink-700);
+      text-align: center;
+      flex: 1;
+    }
+    .cert-body strong { color: var(--burgundy-800); font-family: var(--font-display); font-size: 18px; }
+    .cert-footer {
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(122,100,50,0.3);
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--ink-500);
+    }
+    .cert-signature {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 22px;
+      font-style: italic;
+      color: var(--burgundy-800);
+      text-align: center;
+      margin-top: 16px;
+    }
+    .cert-code-badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: var(--burgundy-800);
+      color: var(--gold-500);
+      padding: 3px 8px;
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      border-radius: 3px;
+    }
+    .cert-wax {
+      position: absolute;
+      bottom: 24px;
+      right: 24px;
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, var(--burgundy-600), var(--burgundy-900));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--gold-500);
+      font-family: var(--font-display);
+      font-size: 22px;
+      transform: rotate(-8deg);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    /* Guarantees list */
+    .guarantee-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .guarantee-item {
+      display: flex;
+      gap: 20px;
+      padding: 20px;
+      background: var(--paper-soft);
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius-md);
+      align-items: flex-start;
+    }
+    .guarantee-item .g-icon {
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      background: var(--gold-100);
+      color: var(--burgundy-700);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .guarantee-item h4 {
+      font-family: var(--font-display);
+      font-size: 20px;
+      color: var(--ink-950);
+      margin-bottom: 6px;
+    }
+    .guarantee-item p { font-size: 14px; color: var(--ink-700); line-height: 1.6; }
+
+    /* FAQ */
+    .faq-list {
+      max-width: 780px;
+      margin: 0 auto;
+    }
+    .faq-item {
+      border-bottom: 1px solid var(--line-soft);
+      padding: 24px 0;
+    }
+    .faq-question {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      gap: 24px;
+    }
+    .faq-question h4 {
+      font-family: var(--font-display);
+      font-size: 20px;
+      color: var(--ink-950);
+      font-weight: 500;
+    }
+    .faq-question .chev { color: var(--burgundy-700); transition: transform 0.2s; }
+    .faq-item.open .faq-question .chev { transform: rotate(180deg); }
+    .faq-answer {
+      max-height: 0;
+      overflow: hidden;
+      transition: all 0.25s ease;
+      color: var(--ink-700);
+      line-height: 1.7;
+      font-family: var(--font-serif);
+      font-size: 17px;
+    }
+    .faq-item.open .faq-answer {
+      max-height: 400px;
+      padding-top: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" data-screen-label="07 Autenticidade"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script src="js/data.js?v=11"></script>
+  <script type="text/babel" src="js/components.jsx?v=11"></script>
+
+  <script type="text/babel">
+    const { useState } = React;
+
+    const faqs = [
+      { q: 'Como sei que a peça é autêntica?', a: 'Toda peça em nosso acervo passa por análise técnica em quatro etapas — pesagem de precisão, medição, análise metalográfica quando necessária e comparação com catálogos oficiais. Emitimos certificado próprio numerado e, para peças acima de R$ 5.000, recomendamos e facilitamos análise adicional pelo IBN (Instituto Brasileiro de Numismática).' },
+      { q: 'O certificado La Zecca tem valor de mercado?', a: 'Sim. Nossa certificação é reconhecida em leilões numismáticos brasileiros e por casas parceiras. O código do certificado é único e pode ser verificado a qualquer momento em nossa base de dados.' },
+      { q: 'E se a peça apresentar problema após a compra?', a: 'Nós garantimos autenticidade por prazo indeterminado. Se em qualquer momento uma peça for questionada, faremos reanálise gratuita e, se comprovado defeito ou inautenticidade, restituímos integralmente o valor pago.' },
+      { q: 'Posso devolver uma peça se mudar de ideia?', a: 'Sim. Você tem 7 dias corridos após o recebimento para devolução sem justificativa, conforme o Código de Defesa do Consumidor. A peça deve retornar em suas condições originais, com o certificado e a embalagem.' },
+      { q: 'Como é feito o envio?', a: 'Enviamos em embalagem sigilosa, acolchoada e com seguro total contra perdas ou danos. Utilizamos Sedex, PAC e transportadoras especializadas em cargas de alto valor. Para peças acima de R$ 10.000, oferecemos entrega em mãos em capitais.' },
+      { q: 'Vocês compram ou avaliam coleções?', a: 'Sim. Realizamos avaliação de coleções para venda direta, consignação ou herança. Entre em contato pelo formulário ou por telefone — o próprio Dr. Sergio conduz as avaliações mais significativas.' },
+    ];
+
+    const Authenticity = () => {
+      const [openFaq, setOpenFaq] = useState(0);
+
+      return (
+        <>
+          <Header page="auth" />
+
+          <section className="page-hero">
+            <div className="container">
+              <div className="breadcrumb">
+                <a href="index.html">Início</a>
+                <span className="sep">/</span>
+                <span>Autenticidade & Garantias</span>
+              </div>
+              <h1 className="h1">Autenticidade acima de tudo</h1>
+              <p className="lede">O que faz uma peça ser <em>de verdade</em>? Nosso método, nossos certificados, nossas garantias — descritos sem letras miúdas.</p>
+            </div>
+          </section>
+
+          {/* Processo */}
+          <section>
+            <div className="container">
+              <div className="section-head" style={{justifyContent:'center', textAlign:'center'}}>
+                <div className="section-title">
+                  <span className="eyebrow">Nosso Processo</span>
+                  <h2 className="h2">Quatro etapas antes de qualquer peça entrar no catálogo</h2>
+                </div>
+              </div>
+              <div className="process-grid">
+                <div className="process-step">
+                  <div className="step-num">1</div>
+                  <div style={{color:'var(--burgundy-700)'}}><Icon name="lens" size={36}/></div>
+                  <h3>Aquisição</h3>
+                  <p>Compramos apenas de fontes com procedência documentada: colecionadores estabelecidos, herdeiros identificados e leilões reconhecidos.</p>
+                </div>
+                <div className="process-step">
+                  <div className="step-num">2</div>
+                  <div style={{color:'var(--burgundy-700)'}}><Icon name="shield" size={36}/></div>
+                  <h3>Análise Técnica</h3>
+                  <p>Pesagem em balança de precisão, medição com paquímetro, teste de densidade para metais preciosos, análise sob luz UV e comparação com padrões.</p>
+                </div>
+                <div className="process-step">
+                  <div className="step-num">3</div>
+                  <div style={{color:'var(--burgundy-700)'}}><Icon name="award" size={36}/></div>
+                  <h3>Atribuição & Catálogo</h3>
+                  <p>Cruzamento com catálogos internacionais (Krause, Amato, Silveira). Atribuição de referência bibliográfica e classificação de raridade.</p>
+                </div>
+                <div className="process-step">
+                  <div className="step-num">4</div>
+                  <div style={{color:'var(--burgundy-700)'}}><Icon name="check" size={36}/></div>
+                  <h3>Certificação</h3>
+                  <p>Emissão de certificado impresso numerado, com foto, descrição técnica, atribuição bibliográfica e assinatura do curador.</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Certificado showcase */}
+          <section className="bg-cream">
+            <div className="container">
+              <div className="certificate-showcase">
+                <div style={{position:'relative'}}>
+                  <div className="certificate-visual">
+                    <div className="cert-code-badge">Nº 00847</div>
+                    <div className="cert-emblem"><img src="assets/logo-emblem.png" alt=""/></div>
+                    <div className="cert-title">Certificado de Autenticidade</div>
+                    <div className="cert-subtitle">La Zecca Numismática · Emitido em São Paulo</div>
+                    <div className="cert-body">
+                      <p>Certificamos que a peça descrita abaixo foi submetida ao processo curatorial da La Zecca e é declarada <strong>autêntica</strong> em todas as suas características constitutivas.</p>
+                      <p style={{marginTop:16, fontSize:14}}>
+                        <b>20.000 Réis Ouro</b><br/>
+                        Império do Brasil · 1889<br/>
+                        Estado: Flor de Cunho
+                      </p>
+                    </div>
+                    <div className="cert-signature">Dr. Sergio Costa</div>
+                    <div className="cert-footer">
+                      <span>Emitido em 12/03/2026</span>
+                      <span>Válido indeterminadamente</span>
+                    </div>
+                    <div className="cert-wax">LZ</div>
+                  </div>
+                </div>
+                <div>
+                  <span className="eyebrow">O Certificado</span>
+                  <h2 className="h2" style={{marginTop:12, marginBottom:20}}>Um documento, uma promessa</h2>
+                  <p style={{fontSize:17, lineHeight:1.7, color:'var(--ink-700)', marginBottom: 20}}>
+                    Cada peça em nosso catálogo é acompanhada de um certificado físico impresso em papel timbrado de 250g, numerado, assinado à mão e selado com lacre de cera.
+                  </p>
+                  <p style={{fontSize:17, lineHeight:1.7, color:'var(--ink-700)', marginBottom: 32}}>
+                    O documento contém a descrição técnica completa, atribuição bibliográfica, grau de conservação e o código único que pode ser verificado em nossa base a qualquer momento.
+                  </p>
+                  <a href="catalog.html" className="btn btn-primary btn-lg">Explorar o acervo certificado</a>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Garantias */}
+          <section>
+            <div className="container-narrow">
+              <div className="section-head" style={{justifyContent:'center', textAlign:'center'}}>
+                <div className="section-title">
+                  <span className="eyebrow">Nossas Garantias</span>
+                  <h2 className="h2">Cinco compromissos, por escrito</h2>
+                </div>
+              </div>
+              <div className="guarantee-list">
+                <div className="guarantee-item">
+                  <div className="g-icon"><Icon name="shield" size={22}/></div>
+                  <div>
+                    <h4>Garantia de Autenticidade Vitalícia</h4>
+                    <p>Se em qualquer momento uma peça adquirida na La Zecca for comprovadamente inautêntica, restituímos integralmente o valor pago, corrigido monetariamente.</p>
+                  </div>
+                </div>
+                <div className="guarantee-item">
+                  <div className="g-icon"><Icon name="refresh" size={22}/></div>
+                  <div>
+                    <h4>7 Dias para Arrependimento</h4>
+                    <p>Direito de devolução sem justificativa, conforme o Código de Defesa do Consumidor. Basta devolver a peça em suas condições originais.</p>
+                  </div>
+                </div>
+                <div className="guarantee-item">
+                  <div className="g-icon"><Icon name="truck" size={22}/></div>
+                  <div>
+                    <h4>Seguro Total no Transporte</h4>
+                    <p>Todas as encomendas viajam com seguro contra perdas, danos e extravio. Você é ressarcido do valor integral em caso de sinistro.</p>
+                  </div>
+                </div>
+                <div className="guarantee-item">
+                  <div className="g-icon"><Icon name="award" size={22}/></div>
+                  <div>
+                    <h4>Preço Justo e Transparente</h4>
+                    <p>Nossos preços seguem as tabelas oficiais do IBN e valores de leilão recentes. Compare, questione, negocie — a discussão faz parte do ofício.</p>
+                  </div>
+                </div>
+                <div className="guarantee-item">
+                  <div className="g-icon"><Icon name="user" size={22}/></div>
+                  <div>
+                    <h4>Curadoria Sempre à Disposição</h4>
+                    <p>Antes ou depois da compra, você pode consultar o Dr. Sergio e sua equipe por e-mail, telefone ou WhatsApp. Sem pressa, sem taxa.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* FAQ */}
+          <section className="bg-cream">
+            <div className="container">
+              <div className="section-head" style={{justifyContent:'center', textAlign:'center'}}>
+                <div className="section-title">
+                  <span className="eyebrow">Perguntas Frequentes</span>
+                  <h2 className="h2">Dúvidas honestas, respostas honestas</h2>
+                </div>
+              </div>
+              <div className="faq-list">
+                {faqs.map((f, i) => (
+                  <div key={i} className={`faq-item ${openFaq === i ? 'open' : ''}`}>
+                    <div className="faq-question" onClick={() => setOpenFaq(openFaq === i ? -1 : i)}>
+                      <h4>{f.q}</h4>
+                      <span className="chev"><Icon name="chevron-down" size={20}/></span>
+                    </div>
+                    <div className="faq-answer">
+                      <p>{f.a}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <Footer />
+        </>
+      );
+    };
+
+    ReactDOM.createRoot(document.getElementById('app')).render(<Authenticity />);
+  </script>
+</body>
+</html>

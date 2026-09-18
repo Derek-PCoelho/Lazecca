@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lazecca Numismática</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=11">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=11">
+  <link rel="icon" type="image/png" sizes="48x48" href="assets/favicon-48.png?v=11">
+  <link rel="icon" type="image/png" sizes="180x180" href="assets/favicon-180.png?v=11">
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/favicon-180.png?v=11">
+  <link rel="shortcut icon" href="assets/favicon-48.png?v=11">
+  <style>
+    .cart-page { padding: 48px 0 96px; }
+    .cart-layout {
+      display: grid;
+      grid-template-columns: 1.6fr 1fr;
+      gap: 40px;
+      align-items: start;
+      margin-top: 32px;
+    }
+    @media (max-width: 900px) { .cart-layout { grid-template-columns: 1fr; } }
+
+    .cart-items {
+      background: var(--paper-soft);
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+    .cart-header {
+      display: grid;
+      grid-template-columns: 100px 1fr 130px 130px 40px;
+      gap: 20px;
+      padding: 16px 24px;
+      background: var(--cream);
+      font-size: 11px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--ink-500);
+      font-weight: 600;
+    }
+    @media (max-width: 720px) { .cart-header { display: none; } }
+
+    .cart-row {
+      display: grid;
+      grid-template-columns: 100px 1fr 130px 130px 40px;
+      gap: 20px;
+      padding: 20px 24px;
+      align-items: center;
+      border-top: 1px solid var(--line-soft);
+    }
+    @media (max-width: 720px) {
+      .cart-row {
+        grid-template-columns: 80px 1fr;
+        gap: 16px;
+      }
+      .cart-row > *:nth-child(3), .cart-row > *:nth-child(4), .cart-row > *:nth-child(5) {
+        grid-column: 2;
+      }
+    }
+    .cart-row .thumb {
+      aspect-ratio: 1;
+      background: var(--cream);
+      border-radius: var(--radius);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .cart-row .thumb img { width: 82%; height: 82%; object-fit: contain; }
+    .cart-row .info h4 {
+      font-family: var(--font-display);
+      font-size: 18px;
+      color: var(--ink-950);
+      margin-bottom: 4px;
+    }
+    .cart-row .info .meta {
+      font-size: 12px;
+      color: var(--ink-500);
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .cart-row .info .cert {
+      font-family: var(--font-sans);
+      background: var(--gold-100);
+      color: var(--burgundy-800);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      display: inline-block;
+      margin-top: 8px;
+    }
+    .cart-row .qty {
+      display: flex;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--paper);
+      max-width: 120px;
+    }
+    .cart-row .qty button { width: 36px; height: 40px; }
+    .cart-row .qty input { width: 40px; text-align: center; border: 0; background: transparent; height: 40px; font-weight: 600; }
+    .cart-row .total {
+      font-family: var(--font-display);
+      font-size: 20px;
+      color: var(--burgundy-800);
+      font-variant-numeric: tabular-nums;
+    }
+    .cart-row .remove {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      color: var(--ink-500);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+    .cart-row .remove:hover { background: var(--gold-100); color: var(--danger); }
+
+    .cart-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 24px;
+      background: var(--cream);
+      border-top: 1px solid var(--line-soft);
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .coupon-row {
+      display: flex;
+      gap: 8px;
+    }
+    .coupon-row input {
+      padding: 10px 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--paper-soft);
+      font-size: 13px;
+      min-width: 200px;
+    }
+
+    /* Summary */
+    .summary {
+      background: var(--paper-soft);
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius-md);
+      padding: 32px;
+      position: sticky;
+      top: 140px;
+    }
+    .summary h3 {
+      font-family: var(--font-display);
+      font-size: 22px;
+      color: var(--burgundy-900);
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--line-soft);
+    }
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      font-size: 14px;
+      color: var(--ink-700);
+    }
+    .summary-row.total {
+      margin-top: 12px;
+      padding-top: 20px;
+      border-top: 1px solid var(--line-soft);
+      font-size: 16px;
+    }
+    .summary-row.total .val {
+      font-family: var(--font-display);
+      font-size: 28px;
+      color: var(--burgundy-900);
+      font-variant-numeric: tabular-nums;
+    }
+    .summary .installments-note {
+      font-size: 12px;
+      color: var(--ink-500);
+      text-align: right;
+      margin-top: 4px;
+    }
+    .summary .pix-highlight {
+      background: linear-gradient(135deg, var(--gold-100), var(--gold-500));
+      padding: 12px 14px;
+      border-radius: var(--radius);
+      margin: 16px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .summary .pix-highlight strong { color: var(--burgundy-900); font-weight: 600; }
+    .summary .pix-highlight span { font-family: var(--font-display); font-size: 18px; color: var(--burgundy-900); }
+
+    .cep-block {
+      margin: 20px 0;
+      padding: 16px;
+      background: var(--cream);
+      border-radius: var(--radius);
+    }
+    .cep-block label { font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-700); margin-bottom: 8px; display: block; }
+    .cep-block .cep-form { display: flex; gap: 8px; }
+    .cep-block input { flex: 1; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper-soft); font-size: 13px; }
+
+    /* Empty */
+    .empty-cart {
+      text-align: center;
+      padding: 80px 24px;
+      background: var(--paper-soft);
+      border: 1px dashed var(--line);
+      border-radius: var(--radius-md);
+    }
+    .empty-cart .icon-big {
+      width: 88px; height: 88px;
+      border-radius: 50%;
+      background: var(--cream);
+      color: var(--burgundy-700);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 24px;
+    }
+
+    /* Trust icons */
+    .trust-row {
+      display: flex;
+      justify-content: space-around;
+      padding: 20px 0;
+      margin-top: 20px;
+      border-top: 1px solid var(--line-soft);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink-500);
+      text-align: center;
+    }
+    .trust-row .trust-item { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .trust-row .trust-item svg { color: var(--burgundy-700); }
+  </style>
+</head>
+<body>
+  <div id="app" data-screen-label="04 Carrinho"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script src="js/data.js?v=11"></script>
+  <script type="text/babel" src="js/components.jsx?v=11"></script>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    const CartPage = () => {
+      const [cart, setCart] = useState(LZ.getCart());
+
+      useEffect(() => {
+        // Se carrinho estiver vazio, popular com 2 exemplos para demo
+        if (cart.length === 0) {
+          LZ.addToCart('p001');
+          LZ.addToCart('p004', 2);
+          setCart(LZ.getCart());
+        }
+        const upd = () => setCart(LZ.getCart());
+        window.addEventListener('lz-cart-changed', upd);
+        return () => window.removeEventListener('lz-cart-changed', upd);
+      }, []);
+
+      const items = cart.map(c => ({ ...c, product: LZ.getProduct(c.id) })).filter(i => i.product);
+      const subtotal = items.reduce((s, i) => s + i.product.price * i.qty, 0);
+      const shipping = subtotal > 500 ? 0 : 24.9;
+      const discount = 0;
+      const total = subtotal + shipping - discount;
+      const pixPrice = total * 0.95;
+
+      const remove = (id) => { LZ.removeFromCart(id); };
+      const upd = (id, qty) => { LZ.updateQty(id, qty); };
+
+      return (
+        <>
+          <Header page="cart" />
+
+          <section className="page-hero" style={{padding: '48px 0 32px'}}>
+            <div className="container">
+              <div className="breadcrumb">
+                <a href="index.html">Início</a>
+                <span className="sep">/</span>
+                <span>Carrinho</span>
+              </div>
+              <h1 className="h1">Seu Carrinho</h1>
+              <p className="lede">{items.length} {items.length === 1 ? 'peça' : 'peças'} · reservadas por 30 minutos</p>
+            </div>
+          </section>
+
+          <div className="cart-page">
+            <div className="container">
+              {items.length === 0 ? (
+                <div className="empty-cart">
+                  <div className="icon-big"><Icon name="cart" size={40}/></div>
+                  <h3 className="h3">Seu carrinho ainda está vazio</h3>
+                  <p style={{color:'var(--ink-500)', marginTop:8, marginBottom: 24}}>Explore o acervo e encontre peças que contam histórias.</p>
+                  <a href="catalog.html" className="btn btn-primary btn-lg">Ir ao catálogo</a>
+                </div>
+              ) : (
+                <div className="cart-layout">
+                  <div className="cart-items">
+                    <div className="cart-header">
+                      <span></span>
+                      <span>Peça</span>
+                      <span>Quantidade</span>
+                      <span>Total</span>
+                      <span></span>
+                    </div>
+                    {items.map(item => {
+                      const p = item.product;
+                      return (
+                        <div key={p.id} className="cart-row">
+                          <a href={`product.html?id=${p.slug}`} className="thumb"><img src={p.image} alt={p.name}/></a>
+                          <div className="info">
+                            <h4><a href={`product.html?id=${p.slug}`}>{p.name}</a></h4>
+                            <div className="meta">
+                              <span>{p.categoryName}</span>
+                              {p.year > 0 && <span>· {p.year}</span>}
+                              {p.state !== 'Novo' && <span>· Estado {p.state}</span>}
+                            </div>
+                            {p.certificate && <span className="cert">Cert. {p.certificate}</span>}
+                          </div>
+                          <div className="qty">
+                            <button onClick={() => upd(p.id, item.qty - 1)}><Icon name="minus" size={14}/></button>
+                            <input value={item.qty} readOnly/>
+                            <button onClick={() => upd(p.id, item.qty + 1)}><Icon name="plus" size={14}/></button>
+                          </div>
+                          <div className="total">{LZ.formatPrice(p.price * item.qty)}</div>
+                          <button className="remove" onClick={() => remove(p.id)} title="Remover"><Icon name="x" size={16}/></button>
+                        </div>
+                      );
+                    })}
+                    <div className="cart-footer">
+                      <a href="catalog.html" className="btn btn-ghost">← Continuar explorando</a>
+                      <div className="coupon-row">
+                        <input placeholder="Cupom de desconto" />
+                        <button className="btn btn-outline">Aplicar</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="summary">
+                    <h3>Resumo do Pedido</h3>
+                    <div className="summary-row">
+                      <span>Subtotal ({items.reduce((s,i) => s+i.qty, 0)} peças)</span>
+                      <span>{LZ.formatPrice(subtotal)}</span>
+                    </div>
+                    <div className="summary-row">
+                      <span>Frete</span>
+                      <span>{shipping === 0 ? <span style={{color:'var(--success)', fontWeight:600}}>Grátis</span> : LZ.formatPrice(shipping)}</span>
+                    </div>
+                    {discount > 0 && (
+                      <div className="summary-row">
+                        <span>Desconto</span>
+                        <span style={{color:'var(--danger)'}}>-{LZ.formatPrice(discount)}</span>
+                      </div>
+                    )}
+
+                    <div className="cep-block">
+                      <label>Calcular frete</label>
+                      <div className="cep-form">
+                        <input placeholder="00000-000" />
+                        <button className="btn btn-ghost btn-sm">OK</button>
+                      </div>
+                    </div>
+
+                    <div className="summary-row total">
+                      <span><b>Total</b></span>
+                      <span className="val">{LZ.formatPrice(total)}</span>
+                    </div>
+                    <div className="installments-note">
+                      em até 10× de {LZ.formatPrice(total / 10)} sem juros
+                    </div>
+
+                    <div className="pix-highlight">
+                      <strong><Icon name="pix" size={14}/> À vista no PIX</strong>
+                      <span>{LZ.formatPrice(pixPrice)}</span>
+                    </div>
+
+                    <a href="checkout.html" className="btn btn-primary btn-lg btn-block" style={{marginTop: 16}}>
+                      Finalizar compra <Icon name="chevron-right" size={16}/>
+                    </a>
+
+                    <div className="trust-row">
+                      <div className="trust-item"><Icon name="shield" size={22}/><span>Autenticada</span></div>
+                      <div className="trust-item"><Icon name="truck" size={22}/><span>Envio Seguro</span></div>
+                      <div className="trust-item"><Icon name="refresh" size={22}/><span>7d Devolução</span></div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <Footer />
+        </>
+      );
+    };
+
+    ReactDOM.createRoot(document.getElementById('app')).render(<CartPage />);
+  </script>
+</body>
+</html>

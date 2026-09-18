@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lazecca Numismática</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=11">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=11">
+  <link rel="icon" type="image/png" sizes="48x48" href="assets/favicon-48.png?v=11">
+  <link rel="icon" type="image/png" sizes="180x180" href="assets/favicon-180.png?v=11">
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/favicon-180.png?v=11">
+  <link rel="shortcut icon" href="assets/favicon-48.png?v=11">
+  <style>
+    .auth-page { padding: 48px 0 96px; }
+    .auth-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      max-width: 1080px;
+      margin: 0 auto;
+      background: var(--paper-soft);
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
+    }
+    @media (max-width: 900px) { .auth-layout { grid-template-columns: 1fr; } .auth-side { display: none; } }
+
+    .auth-side {
+      background: linear-gradient(135deg, var(--burgundy-800), var(--burgundy-900));
+      color: var(--cream);
+      padding: 56px 48px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 620px;
+      position: relative;
+      overflow: hidden;
+    }
+    .auth-side::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(circle at 80% 20%, rgba(201,169,97,0.15), transparent 40%);
+    }
+    .auth-side-emblem {
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      border: 1px solid var(--gold-700);
+      overflow: hidden;
+      position: relative;
+    }
+    .auth-side-emblem img { width: 100%; height: 100%; object-fit: cover; }
+    .auth-side h2 {
+      font-family: var(--font-display);
+      font-size: 38px;
+      color: var(--gold-500);
+      line-height: 1.15;
+      position: relative;
+    }
+    .auth-side h2 em { font-style: italic; color: var(--paper-soft); }
+    .auth-side blockquote {
+      font-family: var(--font-serif);
+      font-size: 18px;
+      font-style: italic;
+      line-height: 1.6;
+      color: var(--parchment);
+      padding-left: 20px;
+      border-left: 2px solid var(--gold-700);
+      position: relative;
+    }
+    .auth-side .attribution {
+      margin-top: 16px;
+      font-size: 12px;
+      color: var(--gold-500);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      position: relative;
+    }
+    .auth-side-perks {
+      list-style: none;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      position: relative;
+    }
+    .auth-side-perks li {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 14px;
+      color: var(--parchment);
+    }
+    .auth-side-perks li svg { color: var(--gold-500); flex-shrink: 0; }
+
+    .auth-main {
+      padding: 56px 48px;
+    }
+    .auth-tabs {
+      display: flex;
+      gap: 4px;
+      padding: 4px;
+      background: var(--cream);
+      border-radius: var(--radius);
+      margin-bottom: 32px;
+    }
+    .auth-tab {
+      flex: 1;
+      padding: 12px 20px;
+      text-align: center;
+      font-size: 13px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--ink-500);
+      border-radius: 4px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .auth-tab.active {
+      background: var(--paper-soft);
+      color: var(--burgundy-700);
+      box-shadow: var(--shadow-sm);
+    }
+    .auth-main h2 {
+      font-family: var(--font-display);
+      font-size: 32px;
+      color: var(--burgundy-900);
+      margin-bottom: 8px;
+    }
+    .auth-main .sub {
+      color: var(--ink-500);
+      margin-bottom: 32px;
+    }
+    .auth-form { display: flex; flex-direction: column; gap: 16px; }
+    .auth-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    @media (max-width: 520px) { .auth-row { grid-template-columns: 1fr; } }
+    .auth-forgot {
+      text-align: right;
+      font-size: 13px;
+      color: var(--burgundy-700);
+      font-weight: 500;
+    }
+    .social-divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 24px 0;
+      color: var(--ink-400);
+      font-size: 12px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    .social-divider::before, .social-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--line);
+    }
+    .social-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .social-btn {
+      padding: 12px;
+      border: 1px solid var(--line);
+      background: var(--paper);
+      border-radius: var(--radius);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--ink-800);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .social-btn:hover { border-color: var(--ink-300); background: var(--cream); }
+
+    /* Dashboard (logged in view) */
+    .dashboard-layout {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: 32px;
+      padding: 32px 0;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    @media (max-width: 900px) { .dashboard-layout { grid-template-columns: 1fr; } }
+
+    .dashboard-nav {
+      background: var(--paper-soft);
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      align-self: start;
+    }
+    .dashboard-user {
+      padding: 24px;
+      border-bottom: 1px solid var(--line-soft);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .dashboard-user .avatar {
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      background: var(--burgundy-700);
+      color: var(--gold-500);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-size: 20px;
+    }
+    .dashboard-user .name { font-family: var(--font-display); font-size: 17px; color: var(--ink-950); }
+    .dashboard-user .email { font-size: 12px; color: var(--ink-500); margin-top: 2px; }
+
+    .dashboard-nav ul { list-style: none; padding: 12px 0; margin: 0; }
+    .dashboard-nav li a {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 24px;
+      font-size: 14px;
+      color: var(--ink-700);
+      transition: all 0.15s;
+      border-left: 3px solid transparent;
+    }
+    .dashboard-nav li a:hover { background: var(--cream); }
+    .dashboard-nav li a.active {
+      color: var(--burgundy-700);
+      background: var(--gold-100);
+      border-left-color: var(--gold-700);
+      font-weight: 600;
+    }
+    .dashboard-nav .logout {
+      padding: 16px 24px;
+      border-top: 1px solid var(--line-soft);
+      font-size: 13px;
+      color: var(--ink-500);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+    }
+
+    .dashboard-main .dash-header {
+      margin-bottom: 32px;
+    }
+    .dashboard-main .dash-header h2 {
+      font-family: var(--font-display);
+      font-size: 32px;
+      color: var(--burgundy-900);
+    }
+    .order-card {
+      background: var(--paper-soft);
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius-md);
+      padding: 20px 24px;
+      margin-bottom: 16px;
+    }
+    .order-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--line-soft);
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .order-num {
+      font-family: var(--font-display);
+      font-size: 18px;
+      color: var(--ink-950);
+    }
+    .order-date {
+      font-size: 12px;
+      color: var(--ink-500);
+      margin-top: 2px;
+    }
+    .order-status {
+      padding: 6px 12px;
+      background: var(--gold-100);
+      color: var(--burgundy-800);
+      border-radius: var(--radius-full);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .order-status.delivered { background: rgba(79,122,78,0.15); color: var(--success); }
+    .order-status.shipped { background: rgba(107,31,42,0.12); color: var(--burgundy-700); }
+    .order-items {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+    }
+    .order-item-thumb {
+      width: 60px; height: 60px;
+      background: var(--cream);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .order-item-thumb img { width: 82%; height: 82%; object-fit: contain; }
+    .order-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line-soft);
+    }
+    .order-total {
+      font-family: var(--font-display);
+      font-size: 20px;
+      color: var(--burgundy-900);
+    }
+  </style>
+</head>
+<body>
+  <div id="app" data-screen-label="10 Minha Conta"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script src="js/data.js?v=11"></script>
+  <script type="text/babel" src="js/components.jsx?v=11"></script>
+
+  <script type="text/babel">
+    const { useState } = React;
+    const products = window.LZ_DATA.products;
+
+    const Account = () => {
+      const [mode, setMode] = useState(() => localStorage.getItem('lz_logged') === '1' ? 'dashboard' : 'login');
+      const [tab, setTab] = useState('login');
+
+      const login = () => {
+        localStorage.setItem('lz_logged', '1');
+        setMode('dashboard');
+      };
+      const logout = () => {
+        localStorage.removeItem('lz_logged');
+        setMode('login');
+      };
+
+      const orders = [
+        { num: '#LZ-2026-08192', date: '02 Set 2026', status: 'delivered', statusLabel: 'Entregue', items: [products[0], products[3]], total: 25280 },
+        { num: '#LZ-2026-07811', date: '18 Ago 2026', status: 'shipped', statusLabel: 'Em trânsito', items: [products[6]], total: 145 },
+        { num: '#LZ-2026-06455', date: '02 Jul 2026', status: 'delivered', statusLabel: 'Entregue', items: [products[4], products[5], products[7]], total: 3820 },
+      ];
+
+      if (mode === 'dashboard') {
+        return (
+          <>
+            <Header page="account" />
+            <div className="container">
+              <div className="dashboard-layout">
+                <aside className="dashboard-nav">
+                  <div className="dashboard-user">
+                    <div className="avatar">M</div>
+                    <div>
+                      <div className="name">Marco Aurélio</div>
+                      <div className="email">marco@email.com</div>
+                    </div>
+                  </div>
+                  <ul>
+                    <li><a href="#" className="active"><Icon name="cart" size={16}/> Meus Pedidos</a></li>
+                    <li><a href="#"><Icon name="heart" size={16}/> Peças Favoritas</a></li>
+                    <li><a href="#"><Icon name="shield" size={16}/> Meus Certificados</a></li>
+                    <li><a href="#"><Icon name="map-pin" size={16}/> Endereços</a></li>
+                    <li><a href="#"><Icon name="user" size={16}/> Dados pessoais</a></li>
+                    <li><a href="#"><Icon name="mail" size={16}/> Preferências de e-mail</a></li>
+                  </ul>
+                  <div className="logout" onClick={logout}>
+                    <Icon name="x" size={16}/> Sair da conta
+                  </div>
+                </aside>
+
+                <main className="dashboard-main">
+                  <div className="dash-header">
+                    <span className="eyebrow">Minha Conta</span>
+                    <h2>Meus Pedidos</h2>
+                    <p style={{color:'var(--ink-500)', marginTop:8}}>Acompanhe suas compras e baixe os certificados de autenticidade.</p>
+                  </div>
+
+                  {orders.map(o => (
+                    <div key={o.num} className="order-card">
+                      <div className="order-header">
+                        <div>
+                          <div className="order-num">Pedido {o.num}</div>
+                          <div className="order-date">Realizado em {o.date}</div>
+                        </div>
+                        <span className={`order-status ${o.status}`}>{o.statusLabel}</span>
+                      </div>
+                      <div className="order-items">
+                        {o.items.map(p => (
+                          <div key={p.id} className="order-item-thumb"><img src={p.image} alt={p.name}/></div>
+                        ))}
+                        <div style={{flex:1, minWidth:0}}>
+                          <div style={{fontSize:14, color:'var(--ink-800)', fontWeight:500}}>
+                            {o.items.map(i => i.name).join(' · ')}
+                          </div>
+                          <div style={{fontSize:12, color:'var(--ink-500)', marginTop:4}}>
+                            {o.items.length} {o.items.length === 1 ? 'peça' : 'peças'}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="order-footer">
+                        <div className="order-total">{LZ.formatPrice(o.total)}</div>
+                        <div style={{display:'flex', gap:8}}>
+                          <button className="btn btn-ghost btn-sm"><Icon name="shield" size={14}/> Baixar Certificado</button>
+                          <button className="btn btn-outline btn-sm">Ver detalhes</button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  <div style={{textAlign:'center', marginTop:32}}>
+                    <a href="catalog.html" className="btn btn-primary btn-lg">Explorar mais peças</a>
+                  </div>
+                </main>
+              </div>
+            </div>
+            <Footer />
+          </>
+        );
+      }
+
+      // Login/Signup mode
+      return (
+        <>
+          <Header page="account" />
+          <div className="auth-page">
+            <div className="container">
+              <div className="auth-layout">
+                <div className="auth-side">
+                  <div>
+                    <div className="auth-side-emblem"><img src="assets/logo-emblem.png" alt=""/></div>
+                  </div>
+                  <div>
+                    <h2>Bem-vindo(a) à<br/><em>casa dos colecionadores</em></h2>
+                  </div>
+                  <div>
+                    <blockquote>
+                      "Uma coleção começa no dia em que você percebe que uma única moeda pode conter um século."
+                    </blockquote>
+                    <div className="attribution">— Dr. Sergio Costa</div>
+                  </div>
+                  <ul className="auth-side-perks">
+                    <li><Icon name="check" size={16}/> Acompanhe pedidos e certificados</li>
+                    <li><Icon name="check" size={16}/> Peças favoritas em uma lista</li>
+                    <li><Icon name="check" size={16}/> Acesso ao Correio do Curador</li>
+                    <li><Icon name="check" size={16}/> Descontos para colecionadores frequentes</li>
+                  </ul>
+                </div>
+
+                <div className="auth-main">
+                  <div className="auth-tabs">
+                    <div className={`auth-tab ${tab === 'login' ? 'active' : ''}`} onClick={() => setTab('login')}>Entrar</div>
+                    <div className={`auth-tab ${tab === 'signup' ? 'active' : ''}`} onClick={() => setTab('signup')}>Criar Conta</div>
+                  </div>
+
+                  {tab === 'login' ? (
+                    <>
+                      <h2>Entrar na minha conta</h2>
+                      <p className="sub">Que bom ter você de volta.</p>
+                      <form className="auth-form" onSubmit={(e) => { e.preventDefault(); login(); }}>
+                        <div className="field">
+                          <label>E-mail</label>
+                          <input type="email" required placeholder="voce@email.com.br" defaultValue="marco@email.com" />
+                        </div>
+                        <div className="field">
+                          <label>Senha</label>
+                          <input type="password" required placeholder="Sua senha" defaultValue="********" />
+                        </div>
+                        <div className="auth-forgot"><a href="#">Esqueci minha senha</a></div>
+                        <button className="btn btn-primary btn-lg btn-block" type="submit">Entrar</button>
+                      </form>
+                      <div className="social-divider">ou entrar com</div>
+                      <div className="social-buttons">
+                        <button className="social-btn">
+                          <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M23 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.2c-.3 1.4-1.1 2.6-2.3 3.4v2.8h3.7c2.2-2 3.4-4.9 3.4-8.4z"/><path fill="#34A853" d="M12 24c3.1 0 5.7-1 7.6-2.8L15.9 18.4c-1 .7-2.4 1.1-3.9 1.1-3 0-5.5-2-6.4-4.7H1.7v3C3.6 21.5 7.5 24 12 24z"/><path fill="#FBBC04" d="M5.6 14.8c-.2-.7-.4-1.4-.4-2.2 0-.8.1-1.5.4-2.2v-3H1.7C.9 8.9.5 10.4.5 12s.4 3.1 1.2 4.4l3.9-1.6z"/><path fill="#EA4335" d="M12 4.7c1.7 0 3.2.6 4.4 1.7l3.3-3.3C17.7 1.2 15.1 0 12 0 7.5 0 3.6 2.6 1.7 6.4l3.9 3c.9-2.7 3.4-4.7 6.4-4.7z"/></svg>
+                          Google
+                        </button>
+                        <button className="social-btn">
+                          <Icon name="facebook" size={18}/> Facebook
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <h2>Criar minha conta</h2>
+                      <p className="sub">Rápido, sem complicação. Seus dados ficam com a gente.</p>
+                      <form className="auth-form" onSubmit={(e) => { e.preventDefault(); login(); }}>
+                        <div className="auth-row">
+                          <div className="field">
+                            <label>Nome</label>
+                            <input required placeholder="Primeiro nome" />
+                          </div>
+                          <div className="field">
+                            <label>Sobrenome</label>
+                            <input required placeholder="Sobrenome" />
+                          </div>
+                        </div>
+                        <div className="field">
+                          <label>E-mail</label>
+                          <input type="email" required placeholder="voce@email.com.br" />
+                        </div>
+                        <div className="auth-row">
+                          <div className="field">
+                            <label>CPF</label>
+                            <input required placeholder="000.000.000-00" />
+                          </div>
+                          <div className="field">
+                            <label>Celular</label>
+                            <input required placeholder="(00) 00000-0000" />
+                          </div>
+                        </div>
+                        <div className="field">
+                          <label>Senha</label>
+                          <input type="password" required placeholder="Mínimo 8 caracteres" />
+                        </div>
+                        <div style={{display:'flex', alignItems:'flex-start', gap:8, fontSize:13, color:'var(--ink-500)'}}>
+                          <input type="checkbox" defaultChecked style={{marginTop:3, accentColor:'var(--burgundy-700)'}} />
+                          <span>Quero receber o Correio do Curador semanal</span>
+                        </div>
+                        <button className="btn btn-primary btn-lg btn-block" type="submit">Criar minha conta</button>
+                        <p style={{fontSize:12, color:'var(--ink-500)', textAlign:'center', marginTop:8}}>
+                          Ao criar sua conta, você aceita nossos <a href="#" style={{color:'var(--burgundy-700)'}}>Termos</a> e a <a href="#" style={{color:'var(--burgundy-700)'}}>Política de Privacidade</a>.
+                        </p>
+                      </form>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+          <Footer />
+        </>
+      );
+    };
+
+    ReactDOM.createRoot(document.getElementById('app')).render(<Account />);
+  </script>
+</body>
+</html>
