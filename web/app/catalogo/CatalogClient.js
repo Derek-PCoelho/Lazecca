@@ -7,15 +7,12 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Icon from '@/components/Icon';
 import ProductCard from '@/components/ProductCard';
-import { getVisibleProducts, CATEGORIES, FILTROS, getPriceRange } from '@/lib/data';
 
 // Recriado literalmente de design_files/catalog.html
 // Melhoria 4: faixa de preço dinâmica (min/max calculados dos produtos reais, não texto fixo)
-export default function CatalogClient() {
-  const products = useMemo(() => getVisibleProducts(), []);
-  const categories = CATEGORIES;
-  const filtros = FILTROS;
-  const priceRange = useMemo(() => getPriceRange(products), [products]);
+// Fase 8: products/categories/filtros/priceRange chegam via props (buscados no
+// servidor por app/catalogo/page.js usando Prisma) em vez de imports estáticos.
+export default function CatalogClient({ products, categories, filtros, priceRange }) {
 
   const estampasUnicas = useMemo(
     () => [...new Set(products.filter((p) => p.estampa).map((p) => p.estampa))],

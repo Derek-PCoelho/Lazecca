@@ -30,8 +30,8 @@ export default function ProductClient({ product, related }) {
   const outOfStock = typeof product.stock === 'number' && product.stock <= 0;
   const maxQty = typeof product.stock === 'number' ? product.stock : 99;
 
-  const handleAdd = () => {
-    const result = addToCart(product.id, qty);
+  const handleAdd = async () => {
+    const result = await addToCart(product.id, qty);
     if (!result.ok) {
       if (result.reason === 'out-of-stock') {
         setStockMsg(`Só temos ${result.available} unidade(s) desta peça em estoque.`);

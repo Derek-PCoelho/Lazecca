@@ -13,13 +13,17 @@ export default function Header({ page = 'home' }) {
   const [count, setCount] = useState(0);
 
   useEffect(() => {
-    setCount(cartCount());
-    const update = () => setCount(cartCount());
+    let mounted = true;
+    const update = () => {
+      cartCount().then((c) => {
+        if (mounted) setCount(c);
+      });
+    };
+    update();
     window.addEventListener(CART_CHANGED_EVENT, update);
-    window.addEventListener('storage', update);
     return () => {
+      mounted = false;
       window.removeEventListener(CART_CHANGED_EVENT, update);
-      window.removeEventListener('storage', update);
     };
   }, []);
 

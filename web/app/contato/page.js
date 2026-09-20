@@ -8,13 +8,39 @@ import Icon from '@/components/Icon';
 import { CONTACT } from '@/lib/config';
 
 // Recriado literalmente de design_files/contact.html
-// Nota (seção 5/7 do megaprompt): o onSubmit já era funcional no protótipo — apenas
-// troca o formulário por uma tela de confirmação local via useState, sem chamada de
-// rede/e-mail/persistência real. A Melhoria 11 (envio real por trás deste onSubmit)
-// fica explicitamente FORA do escopo deste ciclo de créditos (Fase Futura, item 11) —
-// o onSubmit abaixo é preservado como estava, apenas adaptado à sintaxe Next.js.
+// Fase 8: onSubmit agora persiste a mensagem em ContactMessage (banco real) e
+// dispara e-mail de notificação (lib/mail.js) — substitui o comportamento
+// anterior, que só trocava para uma tela de confirmação local sem persistência.
 export default function ContactPage() {
   const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState('');
+  const [form, setForm] = useState({ name: '', email: '', phone: '', subject: 'Dúvida sobre uma peça', message: '' });
+
+  const setField = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
+
+  const onSubmit = async (e) => {
+    e.preventDefault();
+    setSending(true);
+    setError('');
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Não foi possível enviar sua mensagem. Tente novamente.');
+        return;
+      }
+      setSent(true);
+    } catch {
+      setError('Erro de conexão. Verifique sua internet e tente novamente.');
+    } finally {
+      setSending(false);
+    }
+  };
 
   return (
     <>
@@ -117,7 +143,14 @@ export default function ContactPage() {
                   Obrigado por escrever. O Dr. Sergio responderá em até 24 horas úteis. Se for urgente, ligue no{' '}
                   <b>{CONTACT.phoneDisplay}</b> ou fale no WhatsApp.
                 </p>
-                <button onClick={() => setSent(false)} className="btn btn-ghost" style={{ marginTop: 24 }}>
+                <button
+                  onClick={() => {
+                    setSent(false);
+                    setForm({ name: '', email: '', phone: '', subject: 'Dúvida sobre uma peça', message: '' });
+                  }}
+                  className="btn btn-ghost"
+                  style={{ marginTop: 24 }}
+                >
                   Enviar outra mensagem
                 </button>
               </div>
@@ -125,28 +158,23 @@ export default function ContactPage() {
               <>
                 <h2>Deixe sua mensagem</h2>
                 <p>Preencha o formulário abaixo e responderemos com atenção.</p>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    setSent(true);
-                  }}
-                >
+                <form onSubmit={onSubmit}>
                   <div className="form-grid">
                     <div className="field">
                       <label>Seu nome</label>
-                      <input required placeholder="Nome completo" />
+                      <input required placeholder="Nome completo" value={form.name} onChange={setField('name')} />
                     </div>
                     <div className="field">
                       <label>E-mail</label>
-                      <input required type="email" placeholder="voce@email.com.br" />
+                      <input required type="email" placeholder="voce@email.com.br" value={form.email} onChange={setField('email')} />
                     </div>
                     <div className="field">
                       <label>Telefone</label>
-                      <input placeholder="(00) 00000-0000" />
+                      <input placeholder="(00) 00000-0000" value={form.phone} onChange={setField('phone')} />
                     </div>
                     <div className="field">
                       <label>Assunto</label>
-                      <select>
+                      <select value={form.subject} onChange={setField('subject')}>
                         <option>Dúvida sobre uma peça</option>
                         <option>Avaliação de coleção</option>
                         <option>Consignação para venda</option>
@@ -157,7 +185,7 @@ export default function ContactPage() {
                     </div>
                     <div className="field full">
                       <label>Mensagem</label>
-                      <textarea rows="6" placeholder="Conte-nos como podemos ajudar..." required></textarea>
+                      <textarea rows="6" placeholder="Conte-nos como podemos ajudar..." required value={form.message} onChange={setField('message')}></textarea>
                     </div>
                     <div className="full" style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--ink-500)' }}>
                       <input type="checkbox" defaultChecked style={{ accentColor: 'var(--burgundy-700)' }} />
@@ -168,9 +196,14 @@ export default function ContactPage() {
                         </Link>
                       </span>
                     </div>
+                    {error && (
+                      <div className="full" style={{ color: 'var(--danger)', fontSize: 13 }}>
+                        {error}
+                      </div>
+                    )}
                     <div className="full" style={{ marginTop: 16 }}>
-                      <button type="submit" className="btn btn-primary btn-lg btn-block">
-                        Enviar Mensagem <Icon name="chevron-right" size={14} />
+                      <button type="submit" className="btn btn-primary btn-lg btn-block" disabled={sending}>
+                        {sending ? 'Enviando...' : 'Enviar Mensagem'} <Icon name="chevron-right" size={14} />
                       </button>
                     </div>
                   </div>

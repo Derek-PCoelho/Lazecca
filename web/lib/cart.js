@@ -1,94 +1,102 @@
 'use client';
 
-// La Zecca — Carrinho client-side
-// Replica window.LZ do protótipo (design_files/js/data.js), usando localStorage
-// (chave 'lz_cart') até que autenticação real e backend existam (Fase Futura — item 3).
+// La Zecca — Carrinho persistente (Fase 8)
+// Substitui o localStorage por chamadas reais à API (/api/cart/*), que por
+// sua vez persiste no banco (Cart/CartItem, Prisma) — tanto para usuários
+// logados quanto visitantes (sessão de convidado via cookie httpOnly).
 
-import { getProductBySlug, ALL_PRODUCTS } from '@/lib/data';
-
-const CART_KEY = 'lz_cart';
 const CART_EVENT = 'lz-cart-changed';
 
-function getProductById(id) {
-  return ALL_PRODUCTS.find((p) => p.id === id) || getProductBySlug(id);
+function notifyChanged() {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(CART_EVENT));
+  }
 }
 
-export function getCart() {
-  if (typeof window === 'undefined') return [];
+export async function getCartItems() {
   try {
-    return JSON.parse(window.localStorage.getItem(CART_KEY) || '[]');
+    const res = await fetch('/api/cart', { cache: 'no-store' });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.items || []).map((i) => ({
+      id: i.productId, // compat: código usado como "id" do produto na UI
+      qty: i.qty,
+      product: {
+        id: i.legacyCode,
+        dbId: i.productId,
+        slug: i.slug,
+        name: i.name,
+        image: i.image,
+        price: i.price,
+        stock: i.stock,
+        categoryName: i.categoryName,
+        year: i.year,
+        state: i.state,
+        certificate: i.certificate,
+      },
+      cartItemId: i.id,
+    }));
   } catch {
     return [];
   }
 }
 
-function setCart(cart) {
-  if (typeof window === 'undefined') return;
-  window.localStorage.setItem(CART_KEY, JSON.stringify(cart));
-  window.dispatchEvent(new CustomEvent(CART_EVENT));
-}
-
-// Melhoria 13 — Controle de estoque: bloqueia adição além do estoque disponível
-// (campo `stock`, alimentado pela coluna Quantidade da planilha real).
-export function addToCart(productId, qty = 1) {
-  const product = getProductById(productId);
-  if (!product) return { ok: false, reason: 'not-found' };
-
-  const cart = getCart();
-  const existing = cart.find((i) => i.id === productId);
-  const currentQty = existing ? existing.qty : 0;
-  const stock = typeof product.stock === 'number' ? product.stock : Infinity;
-
-  if (currentQty + qty > stock) {
-    return { ok: false, reason: 'out-of-stock', available: Math.max(0, stock - currentQty) };
+export async function addToCart(productId, qty = 1) {
+  try {
+    const res = await fetch('/api/cart', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ productId, qty }),
+    });
+    const data = await res.json();
+    notifyChanged();
+    return data;
+  } catch {
+    return { ok: false, reason: 'network-error' };
   }
-
-  if (existing) existing.qty += qty;
-  else cart.push({ id: productId, qty });
-  setCart(cart);
-  return { ok: true };
 }
 
-export function removeFromCart(productId) {
-  setCart(getCart().filter((i) => i.id !== productId));
-}
-
-export function updateQty(productId, qty) {
-  const cart = getCart();
-  const item = cart.find((i) => i.id === productId);
-  if (!item) return { ok: false, reason: 'not-found' };
-  const product = getProductById(productId);
-  const stock = product && typeof product.stock === 'number' ? product.stock : Infinity;
-  const nextQty = Math.max(1, qty);
-  if (nextQty > stock) {
-    item.qty = stock;
-    setCart(cart);
-    return { ok: false, reason: 'out-of-stock', available: stock };
+export async function removeFromCart(cartItemId) {
+  try {
+    await fetch(`/api/cart/${cartItemId}`, { method: 'DELETE' });
+  } finally {
+    notifyChanged();
   }
-  item.qty = nextQty;
-  setCart(cart);
-  return { ok: true };
 }
 
-export function clearCart() {
-  setCart([]);
+export async function updateQty(cartItemId, qty) {
+  try {
+    const res = await fetch(`/api/cart/${cartItemId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ qty }),
+    });
+    const data = await res.json();
+    notifyChanged();
+    return data;
+  } catch {
+    return { ok: false, reason: 'network-error' };
+  } finally {
+    notifyChanged();
+  }
 }
 
-export function cartCount() {
-  return getCart().reduce((s, i) => s + i.qty, 0);
+export async function clearCart() {
+  try {
+    await fetch('/api/cart', { method: 'DELETE' });
+  } finally {
+    notifyChanged();
+  }
 }
 
-export function cartSubtotal() {
-  return getCart().reduce((s, i) => {
-    const p = getProductById(i.id);
-    return s + (p ? p.price * i.qty : 0);
-  }, 0);
+export async function cartCount() {
+  const items = await getCartItems();
+  return items.reduce((s, i) => s + i.qty, 0);
 }
 
-export function getCartItems() {
-  return getCart()
-    .map((c) => ({ ...c, product: getProductById(c.id) }))
-    .filter((i) => i.product);
+export async function cartSubtotal() {
+  const items = await getCartItems();
+  return items.reduce((s, i) => s + i.product.price * i.qty, 0);
 }
 
 export const CART_CHANGED_EVENT = CART_EVENT;

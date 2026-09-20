@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import Icon from '@/components/Icon';
 import { formatPrice } from '@/lib/data';
-import { getCartItems, clearCart, CART_CHANGED_EVENT } from '@/lib/cart';
+import { getCartItems, CART_CHANGED_EVENT } from '@/lib/cart';
 import { PIX_DISCOUNT_RATE, SHIPPING_METHODS, getShippingPrice, INSTALLMENTS_MAX } from '@/lib/config';
 
 // Recriado literalmente de design_files/checkout.html
@@ -39,11 +39,25 @@ export default function CheckoutPage() {
     cep: '', rua: '', numero: '', complemento: '', bairro: '', cidade: '', estado: 'CE',
   });
 
+  const [loadingCart, setLoadingCart] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+
   useEffect(() => {
-    setItems(getCartItems());
-    const upd = () => setItems(getCartItems());
-    window.addEventListener(CART_CHANGED_EVENT, upd);
-    return () => window.removeEventListener(CART_CHANGED_EVENT, upd);
+    let mounted = true;
+    const load = () =>
+      getCartItems().then((it) => {
+        if (mounted) {
+          setItems(it);
+          setLoadingCart(false);
+        }
+      });
+    load();
+    window.addEventListener(CART_CHANGED_EVENT, load);
+    return () => {
+      mounted = false;
+      window.removeEventListener(CART_CHANGED_EVENT, load);
+    };
   }, []);
 
   const subtotal = items.reduce((s, i) => s + i.product.price * i.qty, 0);
@@ -72,14 +86,49 @@ export default function CheckoutPage() {
     if (validateIdentificacao()) setStep('pagamento');
   };
 
-  const finalizarPedido = () => {
-    const num = 'LZ-' + new Date().getFullYear() + '-' + Math.floor(10000 + Math.random() * 89999);
-    setOrderNumber(num);
-    clearCart();
-    setStep('confirmacao');
+  const finalizarPedido = async () => {
+    setSubmitting(true);
+    setSubmitError('');
+    try {
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customer: {
+            name: form.nome,
+            cpf: form.cpf,
+            email: form.email,
+            phone: form.telefone,
+          },
+          address: {
+            street: form.rua,
+            number: form.numero,
+            complement: form.complemento,
+            neighborhood: form.bairro,
+            city: form.cidade,
+            state: form.estado,
+            zipCode: form.cep,
+          },
+          shippingMethod,
+          paymentMethod: payment,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setSubmitError(data.error || 'Não foi possível concluir o pedido. Tente novamente.');
+        setSubmitting(false);
+        return;
+      }
+      setOrderNumber(data.order.orderNumber);
+      setStep('confirmacao');
+    } catch (err) {
+      setSubmitError('Erro de conexão. Verifique sua internet e tente novamente.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  if (items.length === 0 && step !== 'confirmacao') {
+  if (!loadingCart && items.length === 0 && step !== 'confirmacao') {
     return (
       <>
         <CheckoutHeader />
@@ -200,8 +249,16 @@ export default function CheckoutPage() {
                       </div>
                     </div>
 
-                    <button className="btn btn-primary btn-lg btn-block" style={{ marginTop: 20 }} onClick={finalizarPedido}>
-                      Concluir Pedido <Icon name="check" size={16} />
+                    {submitError && (
+                      <p style={{ color: 'var(--danger)', fontSize: 13, marginTop: 12 }}>{submitError}</p>
+                    )}
+                    <button
+                      className="btn btn-primary btn-lg btn-block"
+                      style={{ marginTop: 20 }}
+                      onClick={finalizarPedido}
+                      disabled={submitting}
+                    >
+                      {submitting ? 'Processando...' : 'Concluir Pedido'} <Icon name="check" size={16} />
                     </button>
                   </>
                 )}

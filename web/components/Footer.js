@@ -1,8 +1,10 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import Icon from './Icon';
 import { CONTACT } from '@/lib/config';
-import { getFooterCategoryLinks } from '@/lib/data';
 
 // Recriado literalmente de design_files/js/components.jsx — Footer
 // Correções de polimento (seção 5/7 do megaprompt):
@@ -10,9 +12,19 @@ import { getFooterCategoryLinks } from '@/lib/data';
 //  - links de categoria reconciliados com LZ_DATA.categories real (removidos
 //    'cedulas-int' e 'comemorativas', que não existem no acervo hoje)
 //  - Política de Privacidade / Termos de Uso apontam para páginas placeholder reais
+// Fase 8: categorias buscadas via /api/categories (Prisma no servidor) — o
+// Footer é usado dentro de páginas 'use client', então não pode ser um
+// Server Component async diretamente.
 export default function Footer() {
   const year = new Date().getFullYear();
-  const catLinks = getFooterCategoryLinks();
+  const [catLinks, setCatLinks] = useState([]);
+
+  useEffect(() => {
+    fetch('/api/categories')
+      .then((r) => r.json())
+      .then((data) => setCatLinks((data.categories || []).map((c) => ({ slug: c.slug, name: c.name }))))
+      .catch(() => setCatLinks([]));
+  }, []);
 
   return (
     <footer className="site-footer">

@@ -6,18 +6,18 @@ import Image from 'next/image';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Icon from '@/components/Icon';
-import { POSTS } from '@/lib/data';
 
 // Recriado literalmente de design_files/blog.html
 // Nota (seção 5 do megaprompt): o filtro por categoria JÁ EXISTIA no protótipo — este
 // arquivo preserva a mesma lógica (array fixo de categorias + useState filtrando por
 // post.category). O que de fato faltava era paginação (Melhoria 12), adicionada abaixo.
+// Fase 8: `posts` chega via props (buscado no servidor por app/diario/page.js).
 const cats = ['Todos', 'Guias', 'História', 'Estética', 'Curiosidades'];
 const POSTS_PER_PAGE = 6;
 
-export default function BlogClient() {
-  const featured = POSTS[0];
-  const rest = POSTS.slice(1);
+export default function BlogClient({ posts }) {
+  const featured = posts[0];
+  const rest = posts.slice(1);
 
   const [cat, setCat] = useState('Todos');
   const [page, setPage] = useState(1);
