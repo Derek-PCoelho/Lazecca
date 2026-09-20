@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma';
 import { hashPassword, signSession, setSessionCookie } from '@/lib/auth';
 import { mergeGuestCartIntoUser } from '@/lib/cartServer';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request) {
   try {
     const body = await request.json();

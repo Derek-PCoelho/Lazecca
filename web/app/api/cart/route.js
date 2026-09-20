@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getCartItems, addToCart, clearCart } from '@/lib/cartServer';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   const items = await getCartItems();
   return NextResponse.json({ items });

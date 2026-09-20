@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { sendContactNotificationEmail } from '@/lib/mail';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request) {
   try {
     const { name, email, phone, subject, message } = (await request.json()) || {};

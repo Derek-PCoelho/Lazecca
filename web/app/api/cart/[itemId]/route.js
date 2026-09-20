@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { updateCartItemQty, removeCartItem, getCartItems } from '@/lib/cartServer';
 
+export const dynamic = 'force-dynamic';
+
 export async function PATCH(request, { params }) {
   try {
     const { qty } = (await request.json()) || {};

@@ -6,6 +6,8 @@ import { calculateShippingOptions } from '@/lib/shipping';
 import { createPixPayment, createCardPayment, createBoletoPayment } from '@/lib/mercadopago';
 import { sendOrderConfirmationEmail } from '@/lib/mail';
 
+export const dynamic = 'force-dynamic';
+
 const PIX_DISCOUNT_RATE = 0.05;
 
 function generateOrderNumber() {

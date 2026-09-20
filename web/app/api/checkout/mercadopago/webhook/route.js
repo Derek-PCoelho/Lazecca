@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getPaymentStatus, mapMpStatusToInternal, isConfigured } from '@/lib/mercadopago';
 
+export const dynamic = 'force-dynamic';
+
 // Webhook do Mercado Pago (Checkout Transparente) — PRÉ-IMPLEMENTADO.
 // Enquanto MERCADOPAGO_ACCESS_TOKEN não estiver configurado, esta rota apenas
 // responde 200 sem processar nada (o Mercado Pago ainda não está enviando
