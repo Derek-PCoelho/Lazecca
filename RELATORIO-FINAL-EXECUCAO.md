@@ -214,3 +214,101 @@ na Seção 5 deste relatório).
 - [x] Dados coerentes com a planilha real (135 cédulas + 4 itens sample marcados e ocultos)
 - [x] Relatório Final entregue (este documento)
 - [x] Pull Request criado: https://github.com/Derek-PCoelho/Lazecca/pull/1
+
+---
+
+## 11. Fase 8 (adendo) — Backend Real, Painel Admin, Mercado Pago Pré-implementado e Deploy em Produção
+
+> Esta seção documenta o ciclo de trabalho posterior ao Relatório Final original (Seções 1–10 acima), que migrou o site de `output: 'export'` (estático) para `output: 'standalone'` (Node.js real) com banco de dados MySQL de produção, e concluiu o **deploy real no servidor Hostinger do cliente**.
+
+### 11.1 O que foi implementado
+
+- **Backend real completo**: autenticação (JWT + bcrypt, cookie `lz_session`),
+  carrinho persistente (guest + usuário logado, com merge automático no login),
+  pedidos com transação atômica (`Order` + `OrderItem` + baixa de estoque),
+  frete (Melhor Envio com fallback para tabela fixa), e-mail transacional
+  (Nodemailer com fallback para console quando SMTP não configurado).
+- **Mercado Pago pré-implementado em modo simulado** (`lib/mercadopago.js`):
+  todas as funções (`createPixPayment`, `createCardPayment`, `createBoletoPayment`,
+  `getPaymentStatus`) retornam dados simulados (`simulated: true`) enquanto
+  `MERCADOPAGO_ACCESS_TOKEN` estiver vazio. **Nenhuma alteração de código será
+  necessária** quando o cliente criar a conta Mercado Pago e fornecer as chaves —
+  basta preenchê-las nas variáveis de ambiente.
+- **Painel administrativo completo** em `/admin` (protegido por `requireAdmin()`):
+  dashboard com métricas, gestão de produtos, pedidos (com mudança de status) e
+  mensagens de contato.
+- **Migração de todas as páginas** de dados estáticos (JSON) para consultas
+  reais ao Prisma/MySQL: home, catálogo, produto, diário/blog, conta, contato.
+- **Banco de dados MySQL de produção** (`u610602689_lazecca_db` no servidor
+  Hostinger `srv817.hstgr.io`) populado via `prisma/seed.js`: 139 produtos,
+  4 categorias, 10 posts do blog, 3 avaliações, 1 usuário administrador.
+- **Correção de segurança crítica**: `.env` (com `DATABASE_URL`/`JWT_SECRET`
+  reais) não estava coberto pelo `.gitignore` anterior (só `.env*.local`
+  estava listado). Corrigido antes de qualquer commit — confirmado via
+  `git ls-files` que o segredo nunca chegou a ser versionado.
+- **Pull Request**: https://github.com/Derek-PCoelho/Lazecca/pull/2
+
+### 11.2 Deploy real em produção (Hostinger)
+
+O deploy foi executado via **API oficial da Hostinger** (`developers.hostinger.com`),
+usando um token de API fornecido pelo usuário nesta sessão (não persistido em
+nenhum arquivo do repositório):
+
+1. **Empacotamento do código-fonte** (não do build compilado) em um `.zip`,
+   excluindo `node_modules/`, `.next/`, `.git/` e `.env`.
+2. **Upload via protocolo TUS** (resumable upload) ao `public_html` do site
+   `lazecca.com.br`, usando `POST /api/hosting/v1/files/upload-urls` para obter
+   credenciais temporárias e depois `POST`+`PATCH` diretos ao endpoint TUS.
+3. **Configuração das variáveis de ambiente de produção** via
+   `PUT /api/hosting/v1/accounts/{username}/websites/{domain}/nodejs/builds/settings/env`
+   — as mesmas chaves do `.env` local (exceto as de Mercado Pago/Melhor
+   Envio/SMTP, que ficam **ausentes** em produção até o cliente preenchê-las;
+   a API rejeita valores de string vazia, então essas variáveis simplesmente
+   não são enviadas, e o código já trata sua ausência como "modo fallback/simulado").
+4. **Build remoto disparado via API** (`POST .../nodejs/builds`), que a própria
+   Hostinger executa no servidor (`npm install && next build`), detectando
+   automaticamente `app_type: "next"` a partir do `package.json` enviado.
+5. **Duas tentativas de build falharam inicialmente** com
+   `Environment variable not found: DATABASE_URL` durante a pré-renderização
+   das rotas `/api/products` e `/api/categories` — isso ocorreu porque essas
+   tentativas rodaram *antes* da etapa 3 (variáveis de ambiente) ter sido
+   concluída no servidor. Assim que as variáveis foram salvas, um build
+   subsequente (dado a mesma configuração) **completou com sucesso**.
+6. **Verificação pós-deploy em produção real** (`https://lazecca.com.br`):
+   - Todas as páginas testadas retornaram **HTTP 200**: `/`, `/catalogo`,
+     `/diario`, `/sobre`, `/autenticidade`, `/conta`, `/contato`, `/carrinho`,
+     `/checkout`, `/admin/login`, `/politica-de-privacidade`, `/termos-de-uso`,
+     `/produto/[slug]`.
+   - `/api/products` retornou os **135 produtos reais + 4 categorias** do
+     banco de dados de produção (confirma conexão MySQL funcionando em runtime).
+   - Login administrativo testado com sucesso (`role: "ADMIN"` confirmado).
+   - Registro de conta de cliente testado com sucesso.
+   - Formulário de contato testado com sucesso (`{"ok":true}`).
+   - Carrinho de convidado testado com sucesso: adição de item com controle
+     de estoque real (bloqueio corretamente retornado para produto sem
+     estoque, sucesso para produto com estoque disponível).
+   - **Dados de teste removidos** do banco de produção após a verificação
+     (usuário de teste, mensagem de contato de teste) — banco final
+     verificado com 1 usuário (admin), 139 produtos, 4 categorias, 0 pedidos,
+     0 mensagens.
+
+### 11.3 Pendências remanescentes (fora do escopo desta sessão)
+
+- **Ativação final do Mercado Pago**: o cliente precisa criar a conta em
+  https://www.mercadopago.com.br/developers/panel/app e fornecer
+  `MERCADOPAGO_ACCESS_TOKEN`/`MERCADOPAGO_PUBLIC_KEY` (produção ou `TEST-`
+  para sandbox). Basta configurá-las nas variáveis de ambiente do Node.js
+  no hPanel (ou via API) e rodar um novo build — nenhuma mudança de código
+  é necessária.
+- **Frete real (Melhor Envio)** e **e-mail transacional real (SMTP)**:
+  mesma lógica — preencher `MELHOR_ENVIO_TOKEN` e `SMTP_HOST`/`SMTP_USER`/
+  `SMTP_PASSWORD` quando disponíveis; até lá, o sistema usa os fallbacks
+  já implementados (tabela de frete fixa / log no console).
+- **Rotação de credenciais recomendada**: como o token de API da Hostinger
+  e a senha do hPanel foram compartilhados em texto puro no chat em uma
+  sessão anterior, recomenda-se fortemente ao cliente rotacionar essas
+  credenciais no painel da Hostinger.
+- **Testes end-to-end mais aprofundados** (fluxo completo de checkout até
+  confirmação simulada de pagamento, testes de carga, testes de acessibilidade
+  automatizados) não foram executados nesta sessão — apenas smoke tests
+  manuais via `curl` nas rotas e fluxos principais.
