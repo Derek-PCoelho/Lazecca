@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import { getVisibleProducts, getCategories, getFiltros, getPriceRange } from '@/lib/data';
 import CatalogClient from './CatalogClient';
 
 export const metadata = {
@@ -6,11 +7,21 @@ export const metadata = {
   description: 'Explore todo o acervo de cédulas e moedas autenticadas da La Zecca. Filtre por denominação, ano, estado de conservação e preço.',
 };
 
-// useSearchParams exige um boundary de Suspense (necessário para export estático)
-export default function CatalogPage() {
+export const dynamic = 'force-dynamic';
+
+// Server Component: busca produtos/categorias/filtros reais via Prisma e
+// repassa como props (useSearchParams no client exige boundary de Suspense).
+export default async function CatalogPage() {
+  const [products, categories, filtros] = await Promise.all([
+    getVisibleProducts(),
+    getCategories(),
+    getFiltros(),
+  ]);
+  const priceRange = getPriceRange(products);
+
   return (
     <Suspense fallback={null}>
-      <CatalogClient />
+      <CatalogClient products={products} categories={categories} filtros={filtros} priceRange={priceRange} />
     </Suspense>
   );
 }

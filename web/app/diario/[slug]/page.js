@@ -1,14 +1,11 @@
 import { notFound } from 'next/navigation';
-import { POSTS, getPostBySlug, getRelatedPosts, BLOG_CONTENTS } from '@/lib/data';
+import { getPostBySlug, getRelatedPosts } from '@/lib/data';
 import BlogPostClient from './BlogPostClient';
 
-// Melhoria 14: rota dinâmica /diario/[slug] (antes blog-post.html?p=)
-export function generateStaticParams() {
-  return POSTS.map((p) => ({ slug: p.slug }));
-}
+export const dynamic = 'force-dynamic';
 
-export function generateMetadata({ params }) {
-  const post = getPostBySlug(params.slug);
+export async function generateMetadata({ params }) {
+  const post = await getPostBySlug(params.slug);
   if (!post) return { title: 'Artigo não encontrado · Lazecca Numismática' };
   return {
     title: `${post.title} · Diário Numismático`,
@@ -21,10 +18,10 @@ export function generateMetadata({ params }) {
   };
 }
 
-export default function BlogPostPage({ params }) {
-  const post = getPostBySlug(params.slug);
+export default async function BlogPostPage({ params }) {
+  const post = await getPostBySlug(params.slug);
   if (!post) notFound();
-  const related = getRelatedPosts(post, 3);
-  const articleBody = BLOG_CONTENTS[post.slug] || '<p>Conteúdo em preparação.</p>';
+  const related = await getRelatedPosts(post, 3);
+  const articleBody = post.contentHtml || '<p>Conteúdo em preparação.</p>';
   return <BlogPostClient post={post} articleBody={articleBody} related={related} />;
 }

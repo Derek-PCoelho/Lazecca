@@ -1,16 +1,14 @@
 import { notFound } from 'next/navigation';
-import { getVisibleProducts, getProductBySlug, getRelatedProducts, formatPrice } from '@/lib/data';
+import { getProductBySlug, getRelatedProducts, formatPrice } from '@/lib/data';
 import ProductClient from './ProductClient';
 
-// Melhoria 14: rota dinâmica /produto/[slug] (antes product.html?id=)
-// Melhoria 15: meta tags dinâmicas geradas em build time via generateStaticParams
-//   (export estático — sem generateMetadata em tempo de requisição, ver next.config.mjs)
-export function generateStaticParams() {
-  return getVisibleProducts().map((p) => ({ slug: p.slug }));
-}
+export const dynamic = 'force-dynamic';
 
-export function generateMetadata({ params }) {
-  const product = getProductBySlug(params.slug);
+// Rota dinâmica /produto/[slug]. Fase 8: dados vêm do banco real (Prisma) em
+// vez de generateStaticParams + export estático — a página agora é renderizada
+// sob demanda pelo servidor Node.js (output: 'standalone').
+export async function generateMetadata({ params }) {
+  const product = await getProductBySlug(params.slug);
   if (!product) {
     return { title: 'Produto não encontrado · Lazecca Numismática' };
   }
@@ -26,14 +24,13 @@ export function generateMetadata({ params }) {
   };
 }
 
-// Melhoria 8 — Tratamento de produto inexistente: elimina o fallback `params.get('id') || 'p001'`
-// do protótipo. Qualquer slug sem produto correspondente cai em not-found.js, que redireciona
-// para /catalogo com a mensagem "Produto não encontrado. Confira nosso catálogo completo abaixo".
-export default function ProductPage({ params }) {
-  const product = getProductBySlug(params.slug);
+// Melhoria 8 — Tratamento de produto inexistente: qualquer slug sem produto
+// correspondente cai em not-found.js.
+export default async function ProductPage({ params }) {
+  const product = await getProductBySlug(params.slug);
   if (!product) {
     notFound();
   }
-  const related = getRelatedProducts(product, 4);
+  const related = await getRelatedProducts(product, 4);
   return <ProductClient product={product} related={related} />;
 }

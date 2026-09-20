@@ -18,10 +18,14 @@ export default function CartPage() {
   const [stockWarning, setStockWarning] = useState('');
 
   useEffect(() => {
-    setItems(getCartItems());
-    const upd = () => setItems(getCartItems());
-    window.addEventListener(CART_CHANGED_EVENT, upd);
-    return () => window.removeEventListener(CART_CHANGED_EVENT, upd);
+    let mounted = true;
+    const load = () => getCartItems().then((it) => mounted && setItems(it));
+    load();
+    window.addEventListener(CART_CHANGED_EVENT, load);
+    return () => {
+      mounted = false;
+      window.removeEventListener(CART_CHANGED_EVENT, load);
+    };
   }, []);
 
   const subtotal = items.reduce((s, i) => s + i.product.price * i.qty, 0);
@@ -32,9 +36,9 @@ export default function CartPage() {
   const total = subtotal + shipping - discount;
   const pixPrice = total * (1 - PIX_DISCOUNT_RATE);
 
-  const remove = (id) => removeFromCart(id);
-  const upd = (id, qty, product) => {
-    const result = updateQty(id, qty);
+  const remove = (cartItemId) => removeFromCart(cartItemId);
+  const upd = async (cartItemId, qty, product) => {
+    const result = await updateQty(cartItemId, qty);
     if (!result.ok && result.reason === 'out-of-stock') {
       setStockWarning(`"${product.name}" tem apenas ${result.available} unidade(s) em estoque.`);
       setTimeout(() => setStockWarning(''), 4000);
@@ -93,7 +97,7 @@ export default function CartPage() {
                   const p = item.product;
                   const maxQty = typeof p.stock === 'number' ? p.stock : 99;
                   return (
-                    <div key={p.id} className="cart-row">
+                    <div key={item.cartItemId} className="cart-row">
                       <Link href={`/produto/${p.slug}`} className="thumb">
                         <Image src={`/${p.image}`} alt={p.name} width={100} height={100} style={{ objectFit: 'contain' }} />
                       </Link>
@@ -109,16 +113,16 @@ export default function CartPage() {
                         {p.certificate && <span className="cert">Cert. {p.certificate}</span>}
                       </div>
                       <div className="qty">
-                        <button onClick={() => upd(p.id, item.qty - 1, p)}>
+                        <button onClick={() => upd(item.cartItemId, item.qty - 1, p)}>
                           <Icon name="minus" size={14} />
                         </button>
                         <input value={item.qty} readOnly />
-                        <button onClick={() => upd(p.id, item.qty + 1, p)} disabled={item.qty >= maxQty}>
+                        <button onClick={() => upd(item.cartItemId, item.qty + 1, p)} disabled={item.qty >= maxQty}>
                           <Icon name="plus" size={14} />
                         </button>
                       </div>
                       <div className="total">{formatPrice(p.price * item.qty)}</div>
-                      <button className="remove" onClick={() => remove(p.id)} title="Remover" aria-label={`Remover ${p.name}`}>
+                      <button className="remove" onClick={() => remove(item.cartItemId)} title="Remover" aria-label={`Remover ${p.name}`}>
                         <Icon name="x" size={16} />
                       </button>
                     </div>

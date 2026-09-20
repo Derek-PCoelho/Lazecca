@@ -1,63 +1,131 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Icon from '@/components/Icon';
-import { ALL_PRODUCTS, formatPrice } from '@/lib/data';
+import { formatPrice } from '@/lib/data';
 
 // =============================================================================
-// Recriado literalmente de design_files/account.html
+// Recriado a partir de design_files/account.html — agora com AUTENTICAÇÃO REAL
+// (Fase 8 — Melhoria 3, antes explicitamente fora de escopo, agora endereçada
+// por instrução expressa do cliente).
 //
-// ATENÇÃO — MOCK INTENCIONAL (Melhoria 3 fora de escopo / Fase Futura):
-// O megaprompt define explicitamente que a "Melhoria 3 (autenticação real)"
-// NÃO deve ser implementada neste ciclo de créditos. Esta página preserva,
-// de propósito, o comportamento 100% mockado do protótipo original:
-//   - login()/logout() apenas gravam/removem a flag 'lz_logged' no
-//     localStorage (mesma chave usada em components.jsx no protótipo);
-//   - não há validação de senha, chamada de API, sessão de servidor ou
-//     hashing de credenciais;
-//   - o usuário exibido no dashboard é sempre fixo: "Marco Aurélio" /
-//     "marco@email.com" (idêntico ao account.html original);
-//   - os 3 pedidos do dashboard são hardcoded e apontam para índices fixos
-//     do array de produtos (products[0], products[3], products[6],
-//     products[4], products[5], products[7]) — exatamente como no
-//     protótipo original em design_files/account.html linha ~362-364.
-// Quando a Melhoria 3 for endereçada em uma fase futura, o modelo de dados
-// do usuário deve reservar um campo `passwordHash` (nunca a senha em texto
-// puro) e os pedidos devem vir de uma API real de pedidos por usuário.
+// - login/cadastro chamam /api/auth/login e /api/auth/register (bcrypt + JWT
+//   em cookie httpOnly, ver lib/auth.js) — nada de localStorage.
+// - o dashboard busca o usuário logado em /api/auth/me e os pedidos reais do
+//   usuário em /api/orders (Order/OrderItem, Prisma) — sem dados hardcoded.
 // =============================================================================
+
+const STATUS_LABELS = {
+  AWAITING_PAYMENT: { label: 'Aguardando pagamento', cls: 'shipped' },
+  PAID: { label: 'Pago', cls: 'shipped' },
+  PROCESSING: { label: 'Em preparação', cls: 'shipped' },
+  SHIPPED: { label: 'Em trânsito', cls: 'shipped' },
+  DELIVERED: { label: 'Entregue', cls: 'delivered' },
+  CANCELLED: { label: 'Cancelado', cls: 'cancelled' },
+};
 
 export default function AccountPage() {
-  // localStorage só existe no client; useState lazy-init roda após o mount
-  // em React 18 com 'use client', mas para evitar mismatch de hidratação em
-  // export estático, inicializamos em 'login' e corrigimos no primeiro
-  // render via função abaixo (mesma abordagem simples do protótipo).
-  const [mode, setMode] = useState(() => {
-    if (typeof window === 'undefined') return 'login';
-    return window.localStorage.getItem('lz_logged') === '1' ? 'dashboard' : 'login';
-  });
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
   const [tab, setTab] = useState('login');
+  const [orders, setOrders] = useState([]);
+  const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
-  const login = () => {
-    window.localStorage.setItem('lz_logged', '1');
-    setMode('dashboard');
+  const [loginForm, setLoginForm] = useState({ email: '', password: '' });
+  const [signupForm, setSignupForm] = useState({
+    firstName: '', lastName: '', email: '', cpf: '', phone: '', password: '', wantsNewsletter: true,
+  });
+
+  const loadMe = async () => {
+    try {
+      const res = await fetch('/api/auth/me');
+      const data = await res.json();
+      setUser(data.user);
+      if (data.user) {
+        const ordersRes = await fetch('/api/orders');
+        if (ordersRes.ok) {
+          const ordersData = await ordersRes.json();
+          setOrders(ordersData.orders || []);
+        }
+      }
+    } finally {
+      setLoading(false);
+    }
   };
-  const logout = () => {
-    window.localStorage.removeItem('lz_logged');
-    setMode('login');
+
+  useEffect(() => {
+    loadMe();
+  }, []);
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setError('');
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(loginForm),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Não foi possível entrar.');
+        return;
+      }
+      await loadMe();
+    } catch {
+      setError('Erro de conexão. Tente novamente.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  // Pedidos mockados — índices fixos preservados literalmente do protótipo.
-  const products = ALL_PRODUCTS;
-  const orders = [
-    { num: '#LZ-2026-08192', date: '02 Set 2026', status: 'delivered', statusLabel: 'Entregue', items: [products[0], products[3]].filter(Boolean), total: 25280 },
-    { num: '#LZ-2026-07811', date: '18 Ago 2026', status: 'shipped', statusLabel: 'Em trânsito', items: [products[6]].filter(Boolean), total: 145 },
-    { num: '#LZ-2026-06455', date: '02 Jul 2026', status: 'delivered', statusLabel: 'Entregue', items: [products[4], products[5], products[7]].filter(Boolean), total: 3820 },
-  ];
+  const handleSignup = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setError('');
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(signupForm),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Não foi possível criar sua conta.');
+        return;
+      }
+      await loadMe();
+    } catch {
+      setError('Erro de conexão. Tente novamente.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
-  if (mode === 'dashboard') {
+  const logout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    setUser(null);
+    setOrders([]);
+  };
+
+  if (loading) {
+    return (
+      <>
+        <Header page="account" />
+        <div className="container" style={{ padding: '96px 0', textAlign: 'center', color: 'var(--ink-500)' }}>
+          Carregando...
+        </div>
+        <Footer />
+      </>
+    );
+  }
+
+  if (user) {
     return (
       <>
         <Header page="account" />
@@ -65,10 +133,10 @@ export default function AccountPage() {
           <div className="dashboard-layout">
             <aside className="dashboard-nav">
               <div className="dashboard-user">
-                <div className="avatar">M</div>
+                <div className="avatar">{user.firstName?.[0]?.toUpperCase() || 'U'}</div>
                 <div>
-                  <div className="name">Marco Aurélio</div>
-                  <div className="email">marco@email.com</div>
+                  <div className="name">{user.firstName} {user.lastName}</div>
+                  <div className="email">{user.email}</div>
                 </div>
               </div>
               <ul>
@@ -93,39 +161,43 @@ export default function AccountPage() {
                 </p>
               </div>
 
-              {orders.map((o) => (
-                <div key={o.num} className="order-card">
-                  <div className="order-header">
-                    <div>
-                      <div className="order-num">Pedido {o.num}</div>
-                      <div className="order-date">Realizado em {o.date}</div>
-                    </div>
-                    <span className={`order-status ${o.status}`}>{o.statusLabel}</span>
-                  </div>
-                  <div className="order-items">
-                    {o.items.map((p) => (
-                      <div key={p.id} className="order-item-thumb">
-                        <img src={p.image || (p.images && p.images[0])} alt={p.name} />
-                      </div>
-                    ))}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 14, color: 'var(--ink-800)', fontWeight: 500 }}>
-                        {o.items.map((i) => i.name).join(' · ')}
-                      </div>
-                      <div style={{ fontSize: 12, color: 'var(--ink-500)', marginTop: 4 }}>
-                        {o.items.length} {o.items.length === 1 ? 'peça' : 'peças'}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="order-footer">
-                    <div className="order-total">{formatPrice(o.total)}</div>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <button className="btn btn-ghost btn-sm"><Icon name="shield" size={14} /> Baixar Certificado</button>
-                      <button className="btn btn-outline btn-sm">Ver detalhes</button>
-                    </div>
-                  </div>
+              {orders.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--ink-500)' }}>
+                  <Icon name="cart" size={36} style={{ margin: '0 auto 16px', opacity: 0.4 }} />
+                  <p>Você ainda não fez nenhum pedido.</p>
                 </div>
-              ))}
+              ) : (
+                orders.map((o) => {
+                  const statusInfo = STATUS_LABELS[o.status] || { label: o.status, cls: '' };
+                  return (
+                    <div key={o.id} className="order-card">
+                      <div className="order-header">
+                        <div>
+                          <div className="order-num">Pedido {o.orderNumber}</div>
+                          <div className="order-date">Realizado em {new Date(o.createdAt).toLocaleDateString('pt-BR')}</div>
+                        </div>
+                        <span className={`order-status ${statusInfo.cls}`}>{statusInfo.label}</span>
+                      </div>
+                      <div className="order-items">
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 14, color: 'var(--ink-800)', fontWeight: 500 }}>
+                            {o.items.map((i) => i.productName).join(' · ')}
+                          </div>
+                          <div style={{ fontSize: 12, color: 'var(--ink-500)', marginTop: 4 }}>
+                            {o.items.length} {o.items.length === 1 ? 'peça' : 'peças'}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="order-footer">
+                        <div className="order-total">{formatPrice(o.total)}</div>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <button className="btn btn-outline btn-sm">Ver detalhes</button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
 
               <div style={{ textAlign: 'center', marginTop: 32 }}>
                 <Link href="/catalogo" className="btn btn-primary btn-lg">Explorar mais peças</Link>
@@ -170,80 +242,122 @@ export default function AccountPage() {
 
             <div className="auth-main">
               <div className="auth-tabs">
-                <div className={`auth-tab ${tab === 'login' ? 'active' : ''}`} onClick={() => setTab('login')}>Entrar</div>
-                <div className={`auth-tab ${tab === 'signup' ? 'active' : ''}`} onClick={() => setTab('signup')}>Criar Conta</div>
+                <div className={`auth-tab ${tab === 'login' ? 'active' : ''}`} onClick={() => { setTab('login'); setError(''); }}>Entrar</div>
+                <div className={`auth-tab ${tab === 'signup' ? 'active' : ''}`} onClick={() => { setTab('signup'); setError(''); }}>Criar Conta</div>
               </div>
+
+              {error && (
+                <p style={{ color: 'var(--danger)', fontSize: 13, marginBottom: 12 }}>{error}</p>
+              )}
 
               {tab === 'login' ? (
                 <>
                   <h2>Entrar na minha conta</h2>
                   <p className="sub">Que bom ter você de volta.</p>
-                  <form className="auth-form" onSubmit={(e) => { e.preventDefault(); login(); }}>
+                  <form className="auth-form" onSubmit={handleLogin}>
                     <div className="field">
                       <label>E-mail</label>
-                      <input type="email" required placeholder="voce@email.com.br" defaultValue="marco@email.com" />
+                      <input
+                        type="email"
+                        required
+                        placeholder="voce@email.com.br"
+                        value={loginForm.email}
+                        onChange={(e) => setLoginForm((f) => ({ ...f, email: e.target.value }))}
+                      />
                     </div>
                     <div className="field">
                       <label>Senha</label>
-                      <input type="password" required placeholder="Sua senha" defaultValue="********" />
+                      <input
+                        type="password"
+                        required
+                        placeholder="Sua senha"
+                        value={loginForm.password}
+                        onChange={(e) => setLoginForm((f) => ({ ...f, password: e.target.value }))}
+                      />
                     </div>
                     <div className="auth-forgot"><a href="#">Esqueci minha senha</a></div>
-                    <button className="btn btn-primary btn-lg btn-block" type="submit">Entrar</button>
+                    <button className="btn btn-primary btn-lg btn-block" type="submit" disabled={submitting}>
+                      {submitting ? 'Entrando...' : 'Entrar'}
+                    </button>
                   </form>
-                  <div className="social-divider">ou entrar com</div>
-                  <div className="social-buttons">
-                    <button className="social-btn">
-                      <svg width="18" height="18" viewBox="0 0 24 24">
-                        <path fill="#4285F4" d="M23 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.2c-.3 1.4-1.1 2.6-2.3 3.4v2.8h3.7c2.2-2 3.4-4.9 3.4-8.4z" />
-                        <path fill="#34A853" d="M12 24c3.1 0 5.7-1 7.6-2.8L15.9 18.4c-1 .7-2.4 1.1-3.9 1.1-3 0-5.5-2-6.4-4.7H1.7v3C3.6 21.5 7.5 24 12 24z" />
-                        <path fill="#FBBC04" d="M5.6 14.8c-.2-.7-.4-1.4-.4-2.2 0-.8.1-1.5.4-2.2v-3H1.7C.9 8.9.5 10.4.5 12s.4 3.1 1.2 4.4l3.9-1.6z" />
-                        <path fill="#EA4335" d="M12 4.7c1.7 0 3.2.6 4.4 1.7l3.3-3.3C17.7 1.2 15.1 0 12 0 7.5 0 3.6 2.6 1.7 6.4l3.9 3c.9-2.7 3.4-4.7 6.4-4.7z" />
-                      </svg>
-                      Google
-                    </button>
-                    <button className="social-btn">
-                      <Icon name="facebook" size={18} /> Facebook
-                    </button>
-                  </div>
                 </>
               ) : (
                 <>
                   <h2>Criar minha conta</h2>
                   <p className="sub">Rápido, sem complicação. Seus dados ficam com a gente.</p>
-                  <form className="auth-form" onSubmit={(e) => { e.preventDefault(); login(); }}>
+                  <form className="auth-form" onSubmit={handleSignup}>
                     <div className="auth-row">
                       <div className="field">
                         <label>Nome</label>
-                        <input required placeholder="Primeiro nome" />
+                        <input
+                          required
+                          placeholder="Primeiro nome"
+                          value={signupForm.firstName}
+                          onChange={(e) => setSignupForm((f) => ({ ...f, firstName: e.target.value }))}
+                        />
                       </div>
                       <div className="field">
                         <label>Sobrenome</label>
-                        <input required placeholder="Sobrenome" />
+                        <input
+                          required
+                          placeholder="Sobrenome"
+                          value={signupForm.lastName}
+                          onChange={(e) => setSignupForm((f) => ({ ...f, lastName: e.target.value }))}
+                        />
                       </div>
                     </div>
                     <div className="field">
                       <label>E-mail</label>
-                      <input type="email" required placeholder="voce@email.com.br" />
+                      <input
+                        type="email"
+                        required
+                        placeholder="voce@email.com.br"
+                        value={signupForm.email}
+                        onChange={(e) => setSignupForm((f) => ({ ...f, email: e.target.value }))}
+                      />
                     </div>
                     <div className="auth-row">
                       <div className="field">
                         <label>CPF</label>
-                        <input required placeholder="000.000.000-00" />
+                        <input
+                          required
+                          placeholder="000.000.000-00"
+                          value={signupForm.cpf}
+                          onChange={(e) => setSignupForm((f) => ({ ...f, cpf: e.target.value }))}
+                        />
                       </div>
                       <div className="field">
                         <label>Celular</label>
-                        <input required placeholder="(00) 00000-0000" />
+                        <input
+                          required
+                          placeholder="(00) 00000-0000"
+                          value={signupForm.phone}
+                          onChange={(e) => setSignupForm((f) => ({ ...f, phone: e.target.value }))}
+                        />
                       </div>
                     </div>
                     <div className="field">
                       <label>Senha</label>
-                      <input type="password" required placeholder="Mínimo 8 caracteres" />
+                      <input
+                        type="password"
+                        required
+                        placeholder="Mínimo 8 caracteres"
+                        value={signupForm.password}
+                        onChange={(e) => setSignupForm((f) => ({ ...f, password: e.target.value }))}
+                      />
                     </div>
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 13, color: 'var(--ink-500)' }}>
-                      <input type="checkbox" defaultChecked style={{ marginTop: 3, accentColor: 'var(--burgundy-700)' }} />
+                      <input
+                        type="checkbox"
+                        checked={signupForm.wantsNewsletter}
+                        onChange={(e) => setSignupForm((f) => ({ ...f, wantsNewsletter: e.target.checked }))}
+                        style={{ marginTop: 3, accentColor: 'var(--burgundy-700)' }}
+                      />
                       <span>Quero receber o Correio do Curador semanal</span>
                     </div>
-                    <button className="btn btn-primary btn-lg btn-block" type="submit">Criar minha conta</button>
+                    <button className="btn btn-primary btn-lg btn-block" type="submit" disabled={submitting}>
+                      {submitting ? 'Criando...' : 'Criar minha conta'}
+                    </button>
                     <p style={{ fontSize: 12, color: 'var(--ink-500)', textAlign: 'center', marginTop: 8 }}>
                       Ao criar sua conta, você aceita nossos{' '}
                       <Link href="/termos-de-uso" style={{ color: 'var(--burgundy-700)' }}>Termos</Link>{' '}

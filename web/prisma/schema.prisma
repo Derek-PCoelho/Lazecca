@@ -1,0 +1,414 @@
+// =============================================================================
+// Schema de banco de dados — La Zecca Numismática
+// =============================================================================
+// Modelo relacional completo para substituir os JSON estáticos e o
+// localStorage do protótipo por um backend real com MySQL (Hostinger).
+//
+// Fonte da verdade dos dados de produto: design_files/data/cadastro-v2.xlsx
+// (135 cédulas reais + 4 itens de demonstração isSample=true, ver
+// data-quality-log.md para as correções aplicadas na importação).
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// -----------------------------------------------------------------------------
+// Catálogo
+// -----------------------------------------------------------------------------
+
+model Category {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  name        String
+  icon        String?
+  description String?   @db.Text
+  image       String?
+  sortOrder   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  products    Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  // ID legado padronizado Cxxxx (Melhoria 7). Cédulas reais: C0001-C0135.
+  // Itens de demonstração (sem cadastro real, aba Moedas vazia): C0136+.
+  legacyCode  String   @unique
+  slug        String   @unique
+  name        String
+  description String?  @db.Text
+  history     String?  @db.Text
+
+  // Campos originais do cadastro numismático (planilha real) — nomes
+  // preservados em português (idênticos ao JSON estático anterior) para
+  // simplificar o mapeamento direto em lib/data.js.
+  catalogReference String?  // "referenciaCatalogo"
+  padrao           String?  // "Padrão monetário"
+  denomination     String?  // "Denominação"
+  year             Int?
+  periodo          String?  // "Período"
+  figura           String?  // retrato/figura histórica estampada na peça
+  estampa          String?  // "Estampa ou família"
+  serie            String?  // "Série"
+  assinaturas      String?  // "Assinaturas ou chancelas"
+  variedade        String?  // "Variedade"
+  defeitos         String?  @db.Text // "Defeitos do exemplar"
+  observacoes      String?  @db.Text // "Observações"
+
+  country     String?  @default("Brasil")
+  countryCode String?  @default("BR")
+  metal       String?
+  weight      String?  @default("—")
+  diameter    String?  @default("—")
+
+  state       String?  // sigla curta, ex: SOB, MBC, FE
+  stateShort  String?
+  stateFull   String?
+  stateLabel  String?
+
+  seals       Json?    // array de strings, ex: ["rare","authenticated"]
+  rarity      String?  @default("Regular")
+  certificate String?
+  shipping    String?  // texto exibido na página de produto, ex: "Frete R$ 24,90"
+
+  quantidade  Int      @default(1) // exemplares no lote/sequência
+  isSequencia Boolean  @default(false)
+
+  price       Decimal  @db.Decimal(10, 2)
+  priceOld    Decimal? @db.Decimal(10, 2)
+  stock       Int      @default(0)
+  weightGrams Int      @default(50) // usado no cálculo de frete
+
+  // Itens sem cadastro real confirmado na planilha (aba Moedas vazia) —
+  // ocultos do catálogo de produção por padrão (ver lib/data.js)
+  isSample    Boolean  @default(false)
+  isActive    Boolean  @default(true)
+
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id])
+
+  images      ProductImage[]
+  orderItems  OrderItem[]
+  cartItems   CartItem[]
+  reviews     Review[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([categoryId])
+  @@index([isSample, isActive])
+  @@map("products")
+}
+
+model ProductImage {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url       String
+  altText   String?
+  sortOrder Int     @default(0)
+
+  @@index([productId])
+  @@map("product_images")
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id])
+  authorName String
+  authorCity String?
+  title     String?
+  rating    Int
+  comment   String   @db.Text
+  displayDate String? // texto original do protótipo, ex: "15 Ago 2026"
+  createdAt DateTime @default(now())
+
+  @@index([productId])
+  @@map("reviews")
+}
+
+// -----------------------------------------------------------------------------
+// Blog / Diário do Curador
+// -----------------------------------------------------------------------------
+
+model Post {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  excerpt     String?  @db.Text
+  contentHtml String   @db.LongText
+  coverImage  String?
+  category    String?
+  author      String   @default("Dr. Sergio Costa")
+  readTime    String?
+  displayDate String?  // texto original do protótipo, ex: "28 Ago 2026"
+  sortOrder   Int      @default(0)
+  publishedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("posts")
+}
+
+// -----------------------------------------------------------------------------
+// Usuários e autenticação real (Melhoria 3)
+// -----------------------------------------------------------------------------
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  cpf          String?
+  phone        String?
+  role         UserRole  @default(CUSTOMER)
+  isActive     Boolean   @default(true)
+  wantsNewsletter Boolean @default(false)
+
+  addresses    Address[]
+  orders       Order[]
+  cart         Cart?
+  passwordResets PasswordResetToken[]
+
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@map("users")
+}
+
+enum UserRole {
+  CUSTOMER
+  ADMIN
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+model Address {
+  id           String  @id @default(cuid())
+  userId       String
+  user         User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label        String  @default("Principal")
+  recipientName String
+  street       String
+  number       String
+  complement   String?
+  neighborhood String
+  city         String
+  state        String
+  zipCode      String
+  isDefault    Boolean @default(false)
+  orders       Order[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId])
+  @@map("addresses")
+}
+
+// -----------------------------------------------------------------------------
+// Carrinho persistente (Fase 3 — substitui localStorage)
+// -----------------------------------------------------------------------------
+
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String?    @unique
+  user      User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Carrinho de visitante não-autenticado, identificado por cookie de sessão
+  sessionToken String?  @unique
+  items     CartItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@map("carts")
+}
+
+model CartItem {
+  id        String  @id @default(cuid())
+  cartId    String
+  cart      Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int     @default(1)
+  addedAt   DateTime @default(now())
+
+  @@unique([cartId, productId])
+  @@index([productId])
+  @@map("cart_items")
+}
+
+// -----------------------------------------------------------------------------
+// Pedidos (Fase 3 — checkout real) + Pagamento (Fase 4 — Mercado Pago)
+// -----------------------------------------------------------------------------
+
+model Order {
+  id              String       @id @default(cuid())
+  orderNumber     String       @unique // formato LZ-AAAA-XXXXX, igual ao mock do protótipo
+
+  userId          String?
+  user            User?        @relation(fields: [userId], references: [id])
+
+  // Snapshot dos dados do cliente no momento da compra (não depende de User
+  // existir, permite checkout de convidado)
+  customerName    String
+  customerEmail   String
+  customerPhone   String?
+  customerCpf     String?
+
+  addressId       String?
+  address         Address?     @relation(fields: [addressId], references: [id])
+  // Snapshot do endereço de entrega no momento da compra
+  shippingStreet       String?
+  shippingNumber       String?
+  shippingComplement   String?
+  shippingNeighborhood String?
+  shippingCity         String?
+  shippingState        String?
+  shippingZipCode      String?
+
+  items           OrderItem[]
+
+  subtotal        Decimal      @db.Decimal(10, 2)
+  shippingMethod  String       // pac | sedex | sedex10 | retirada
+  shippingPrice   Decimal      @db.Decimal(10, 2)
+  discountTotal   Decimal      @db.Decimal(10, 2) @default(0) // desconto PIX
+  total           Decimal      @db.Decimal(10, 2)
+
+  paymentMethod   String       // pix | credit_card | boleto
+  paymentStatus   PaymentStatus @default(PENDING)
+  status          OrderStatus  @default(AWAITING_PAYMENT)
+
+  payment         Payment?
+
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([userId])
+  @@index([customerEmail])
+  @@map("orders")
+}
+
+enum OrderStatus {
+  AWAITING_PAYMENT
+  PAID
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  REFUNDED
+  IN_PROCESS
+}
+
+model OrderItem {
+  id          String  @id @default(cuid())
+  orderId     String
+  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product @relation(fields: [productId], references: [id])
+  // Snapshot do produto no momento da venda (preço pode mudar depois)
+  productName String
+  unitPrice   Decimal @db.Decimal(10, 2)
+  quantity    Int
+
+  @@index([orderId])
+  @@index([productId])
+  @@map("order_items")
+}
+
+// -----------------------------------------------------------------------------
+// Pagamento — Mercado Pago Checkout Transparente
+// -----------------------------------------------------------------------------
+// PRÉ-IMPLEMENTADO: esta tabela e as rotas relacionadas (lib/mercadopago.js,
+// app/api/checkout/*) já estão prontas para operar assim que as credenciais
+// reais (MERCADOPAGO_ACCESS_TOKEN) forem configuradas no .env / ambiente de
+// produção. Enquanto vazias, o app roda em modo simulado (ver lib/mercadopago.js).
+// -----------------------------------------------------------------------------
+
+model Payment {
+  id                    String   @id @default(cuid())
+  orderId               String   @unique
+  order                 Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  method                String   // pix | credit_card | boleto
+  provider              String   @default("mercadopago")
+  providerPaymentId     String?  // ID retornado pelo Mercado Pago
+  status                PaymentStatus @default(PENDING)
+
+  // PIX
+  pixQrCode             String?  @db.Text
+  pixQrCodeBase64       String?  @db.LongText
+  pixExpiresAt          DateTime?
+
+  // Boleto
+  boletoUrl             String?
+  boletoBarcode         String?
+  boletoExpiresAt       DateTime?
+
+  // Cartão (nunca armazenamos número/CVV — apenas metadados de resposta)
+  cardLastFourDigits    String?
+  cardBrand             String?
+  installments          Int?     @default(1)
+
+  rawResponse           Json?    // payload completo devolvido pelo gateway, para auditoria/debug
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@map("payments")
+}
+
+// -----------------------------------------------------------------------------
+// Contato (Melhoria 11 — agora COM envio real, diferente da versão anterior)
+// -----------------------------------------------------------------------------
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  subject   String?
+  message   String   @db.Text
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("contact_messages")
+}
+
+// -----------------------------------------------------------------------------
+// Configuração dinâmica do site (usada pelo painel administrativo)
+// -----------------------------------------------------------------------------
+
+model SiteSetting {
+  key       String   @id
+  value     String   @db.Text
+  updatedAt DateTime @updatedAt
+
+  @@map("site_settings")
+}

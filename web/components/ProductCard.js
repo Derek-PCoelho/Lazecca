@@ -13,10 +13,10 @@ import { addToCart } from '@/lib/cart';
 export default function ProductCard({ product: p }) {
   const outOfStock = typeof p.stock === 'number' && p.stock <= 0;
 
-  const handleBuy = (e) => {
+  const handleBuy = async (e) => {
     e.preventDefault();
     if (outOfStock) return;
-    addToCart(p.id);
+    await addToCart(p.id);
   };
 
   return (

@@ -1,21 +1,26 @@
 /** @type {import('next').NextConfig} */
-// Fase 0 — Verificação de hospedagem (Hostinger): não foi possível confirmar em tempo hábil
-// qual plano de hospedagem Hostinger está contratado (compartilhado vs. Business/Cloud com
-// suporte a Node.js). Por isso, seguindo o protocolo de fallback do megaprompt (seção 8),
-// adotamos por padrão a arquitetura mais portável: exportação estática (`output: 'export'`),
-// com dados embutidos em build time via generateStaticParams. Isso implica que:
-//  - Não há API routes de servidor nem middleware.
-//  - generateMetadata roda em build time (compatível com export estático).
-//  - O checkout (Melhoria 2) e o cálculo de frete (Melhoria 6) são implementados como lógica
-//    client-side, não como chamadas a um backend real — ver relatório final para detalhes.
-// Caso o cliente confirme um plano Hostinger com suporte a Node.js (Business/Cloud/VPS),
-// esta é a única linha que precisa mudar (remover output:'export' e habilitar SSR completo).
+// =============================================================================
+// Fase 0 (atualização) — Confirmado via API oficial da Hostinger que o plano
+// contratado ("Unlimited Web Hosting", order_id 1009950960) SUPORTA
+// hospedagem Node.js real (HostingNodeJSApi: startNodeJsBuildV1, runtime logs,
+// env vars, etc — https://developers.hostinger.com). Isso substitui a decisão
+// anterior de export estático.
+//
+// Arquitetura atual: Next.js standalone (output: 'standalone'), rodando como
+// servidor Node.js de verdade no hPanel, com:
+//   - API routes reais em app/api/** (autenticação, carrinho, pedidos,
+//     pagamento, frete, contato, painel administrativo)
+//   - Banco de dados MySQL real (Prisma) hospedado no mesmo plano Hostinger
+//   - Checkout (Melhoria 2) e frete (Melhoria 6) processados no servidor,
+//     não mais client-side
+// =============================================================================
 const nextConfig = {
-  output: 'export',
+  output: 'standalone',
   images: {
+    // A hospedagem compartilhada não expõe um serviço de otimização de imagem
+    // dedicado; mantemos unoptimized para simplicidade e desempenho previsível.
     unoptimized: true,
   },
-  trailingSlash: true,
 };
 
 export default nextConfig;
