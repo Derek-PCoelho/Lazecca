@@ -1,0 +1,216 @@
+# Relatório Final de Execução — Migração La Zecca Numismática → Next.js 14
+
+**Data:** 2026-09-20
+**Repositório:** `Derek-PCoelho/Lazecca`
+**Branch de trabalho:** `genspark_ai_developer`
+**Pull Request:** https://github.com/Derek-PCoelho/Lazecca/pull/1
+
+---
+
+## 1. Resumo Executivo
+
+O protótipo estático (11 páginas HTML + React via CDN/Babel in-browser) da
+La Zecca Numismática foi migrado integralmente para uma aplicação
+**Next.js 14 (App Router)** com **exportação estática** (`output: 'export'`),
+seguindo à risca a "regra de ouro" do megaprompt (código-fonte sempre
+prevalece sobre documentação) e a hierarquia de dados definida
+(`cadastro-v2.xlsx` > código > `README.md`).
+
+Todas as 11 páginas do protótipo foram recriadas como rotas Next.js, mais 2
+páginas placeholder novas (Política de Privacidade e Termos de Uso) para
+eliminar links mortos do rodapé. O build de produção (`npm run build`) foi
+executado com sucesso, gerando **160 páginas estáticas**. Nenhuma das 1800
+créditos de orçamento foi excedida (uso real ficou dentro do previsto para
+as Fases 0–3; a Fase 4/polimento e este relatório consomem a reserva final).
+
+---
+
+## 2. Status por Fase
+
+| Fase | Escopo | Status |
+|---|---|---|
+| **Fase 0** — Descoberta, leitura de fontes, decisão de arquitetura, correção de dados | Leitura integral de README + 11 HTMLs + styles.css + data.js + blog-contents.js + components.jsx; análise de `cadastro-v2.xlsx` via `openpyxl`; pesquisa Hostinger; correções de dados com log de auditoria | ✅ **Concluída** |
+| **Fase 1** — Fundação do app Next.js (scaffold, config, dados, libs, componentes base) | `web/` criado, `next.config.mjs`, `globals.css`, pipeline de dados JSON, `lib/config.js`, `lib/data.js`, `lib/cart.js`, `lib/useReveal.js`, `Icon`/`Header`/`Footer`/`ProductCard`/`FeatureStrip`/`OrnamentDivider` | ✅ **Concluída** |
+| **Fase 2** — Páginas centrais (Home, Catálogo, Produto, Carrinho, Checkout) | 5 rotas, com Melhorias 1, 2, 4, 5, 6, 8, 13, 15 aplicadas | ✅ **Concluída** |
+| **Fase 3** — Páginas institucionais e de conteúdo (Sobre, Autenticidade, Diário/Blog, Contato, Conta) | 6 rotas (incluindo dinâmica `/diario/[slug]`), Melhorias 9, 11 (mantida fora de escopo), 12, 14 | ✅ **Concluída** |
+| **Fase 4** — Polimento (acessibilidade, meta tags, placeholders, build/validação) | Melhorias 16, 17, 18 + 3 itens extras + placeholders + `npm run build` + smoke test | ✅ **Concluída** |
+| **Reserva final (50 créditos)** | Relatório Final de Execução (este documento) | ✅ **Concluída** |
+
+---
+
+## 3. Status por Melhoria Aprovada
+
+| # | Melhoria | Status | Onde |
+|---|---|---|---|
+| 1 | Galeria real de imagens (remover efeito CSS simulado de foto) | ✅ Implementada | `app/produto/[slug]/ProductClient.js` — usa `product.images[]` real, sem rotação/sépia CSS simulados |
+| 2 | Checkout funcional com navegação real por etapas | ✅ Implementada (client-side, ver Fase 0) | `app/checkout/page.js` — máquina de estados `identificacao → pagamento → confirmacao` |
+| 4 | Filtro de preço dinâmico | ✅ Implementada | `lib/data.js:getPriceRange()` + `app/catalogo/CatalogClient.js` |
+| 5 | Remover auto-populate de demonstração do carrinho | ✅ Implementada (removida) | `app/carrinho/page.js` — comentário explícito confirma ausência do `useEffect` de auto-populate |
+| 6 | Frete funcional por transportadora | ✅ Implementada (client-side, ver Fase 0) | `lib/config.js:SHIPPING_METHODS/getShippingPrice` + `app/checkout/page.js` |
+| 7 | Padronizar IDs legados para formato Cxxxx a partir de C0136 | ✅ Implementada | `web/data/products.json` — 4 itens sample renumerados `C0136`–`C0139`, `legacyId` preservado |
+| 8 | Produto inexistente → redireciona ao catálogo com mensagem | ✅ Implementada | `app/produto/[slug]/page.js` (`notFound()`) + `app/not-found.js` (CTA para `/catalogo`) |
+| 9 | Remover CSS morto `.team-grid`/`.team-card` | ✅ Implementada (removido) | Removido de `app/globals.css` via brace-matching programático |
+| 13 | Controle real de estoque (prioridade máxima) | ✅ Implementada | `lib/cart.js` (bloqueio em `addToCart`/`updateQty`) + `components/ProductCard.js` + `ProductClient.js` |
+| 14 | Rotas amigáveis dinâmicas | ✅ Implementada | `/produto/[slug]`, `/diario/[slug]` com `generateStaticParams` |
+| 15 | Meta tags dinâmicas | ✅ Implementada | `generateMetadata()` em `produto/[slug]/page.js` e `diario/[slug]/page.js` |
+| 16 | Acessibilidade (ícones) | ✅ Implementada | `components/Icon.js` — `aria-hidden`/`role="img"`+`aria-label` |
+| 17 | Alt text em imagens | ✅ Implementada | Todas as `<img>`/`<Image>` recebem `alt` significativo (nome do produto/artigo) |
+| 18 | Configuração de contato centralizada | ✅ Implementada | `lib/config.js:CONTACT` — consumido por `Header`, `Footer`, `/contato` |
+| Extra | Ano de copyright dinâmico | ✅ Implementada | `components/Footer.js` — `new Date().getFullYear()` |
+| Extra | Placeholders Privacidade/Termos | ✅ Implementada | `app/politica-de-privacidade/page.js`, `app/termos-de-uso/page.js` |
+| Extra | Links de categoria do rodapé reconciliados | ✅ Implementada | `lib/data.js:getFooterCategoryLinks()` |
+
+### Explicitamente fora de escopo (Fase Futura)
+
+| # | Melhoria | Status | Justificativa |
+|---|---|---|---|
+| 3 | Autenticação real | ⛔ Fora de escopo (conforme megaprompt) | `app/conta/page.js` preserva literalmente o mock do protótipo (`localStorage['lz_logged']`, usuário/pedidos hardcoded). Comentário no código reserva campo `passwordHash` para fase futura. |
+| 11 | Submissão real do formulário de contato | ⛔ Fora de escopo (conforme megaprompt) | `app/contato/page.js` mantém o `onSubmit` de estado local existente, sem chamada de API/e-mail real. |
+
+---
+
+## 4. Arquitetura e Decisão de Hospedagem (Fase 0)
+
+- **Pesquisa:** hospedagem compartilhada da Hostinger não executa Node.js/SSR;
+  apenas planos Business, Cloud ou VPS suportam. Não foi possível confirmar
+  o plano exato do cliente dentro do orçamento de Fase 0.
+- **Decisão (fallback explícito do megaprompt):** adotado `output: 'export'`
+  em `web/next.config.mjs` — gera HTML/CSS/JS 100% estático, compatível com
+  qualquer plano de hospedagem, incluindo o compartilhado mais básico.
+- **Consequência assumida e documentada no código:** Checkout (Melhoria 2) e
+  cálculo de frete (Melhoria 6) são implementados como lógica **client-side**
+  (estado React + funções puras em `lib/config.js`), e não como API routes
+  server-side, já que o export estático não permite rotas de API.
+- **Recomendação para fase futura:** se o cliente confirmar um plano com
+  suporte a Node.js (Business/Cloud/VPS), a arquitetura pode evoluir para
+  `output` padrão (SSR/ISR) com API routes reais para checkout e frete,
+  sem necessidade de reescrever a UI.
+
+---
+
+## 5. Qualidade de Dados (Fase 0) — Resumo
+
+Ver anexo completo em `data-quality-log.md` / `data-quality-log.json`.
+
+- **135 cédulas reais** confirmadas na aba "Cédulas" de `cadastro-v2.xlsx`
+  (IDs `C0001`–`C0135`, sem gaps).
+- **Aba "Moedas" vazia** (0 linhas) — os 4 itens de moeda/acessório do
+  protótipo (20.000 Réis Ouro, Morgan Dollar 1885-O, Denário Romano, Álbum
+  Numismático) **não têm cadastro real**. Foram marcados `isSample: true`,
+  renumerados para `C0136`–`C0139` (Melhoria 7), e ficam **ocultos do
+  catálogo de produção por padrão** (visíveis apenas com
+  `NEXT_PUBLIC_SHOW_SAMPLE_PRODUCTS=true`).
+- **4 correções automáticas** aplicadas durante a importação (sem bloquear
+  em confirmação manual, conforme instrução do megaprompt):
+  1. C0056 — Ano `1658` → `1958` (incompatível com padrão Cruzeiro).
+  2. C0020 — Denominação `"1 ESTAMPA"` → `"1 CRUZEIRO"` (valor trocado de coluna).
+  3. C0006 — Assinaturas `"1 ESTAMPA"` → vazio (valor trocado de coluna; não inferível).
+  4. C0055 — Assinaturas `"2 ESTAMPA"` → vazio (idem).
+- **Produto final:** `web/data/products.json` contém **139 produtos**
+  (135 reais + 4 samples), confirmado programaticamente (`node -e` sobre o
+  JSON gerado).
+- A discrepância "139 produtos" citada no `README.md` original do cliente
+  se refere, na verdade, ao total incluindo os 4 itens de demonstração —
+  não é um erro do README quando lido com este contexto, mas o número real
+  de **cédulas com cadastro confirmado é 135**, conforme a régua de dados
+  do megaprompt (planilha > código > README).
+
+---
+
+## 6. Lista de Arquivos Criados/Modificados
+
+### Documentação e auditoria (raiz do repositório)
+- `data-quality-log.md`, `data-quality-log.json` — log de correções de dados.
+- `RELATORIO-FINAL-EXECUCAO.md` — este relatório.
+
+### App Next.js (`web/`)
+- **Config:** `next.config.mjs`, `jsconfig.json`, `package.json`, `.eslintrc.json`, `.gitignore`
+- **Layout/estilo:** `app/layout.js`, `app/globals.css`
+- **Dados:** `web/data/{products,categories,filtros,posts,reviews,blog-contents}.json`
+- **Libs:** `lib/config.js`, `lib/data.js`, `lib/cart.js`, `lib/useReveal.js`
+- **Componentes:** `components/{Icon,Header,Footer,ProductCard,FeatureStrip,OrnamentDivider}.js`
+- **Páginas (11 rotas do protótipo + 2 placeholders):**
+  - `app/page.js` (Home)
+  - `app/catalogo/{page.js,CatalogClient.js}`
+  - `app/produto/[slug]/{page.js,ProductClient.js}`
+  - `app/not-found.js`
+  - `app/carrinho/page.js`
+  - `app/checkout/page.js`
+  - `app/sobre/page.js`
+  - `app/autenticidade/{page.js,AuthenticityClient.js}`
+  - `app/diario/{page.js,BlogClient.js}`
+  - `app/diario/[slug]/{page.js,BlogPostClient.js}`
+  - `app/contato/page.js`
+  - `app/conta/page.js`
+  - `app/politica-de-privacidade/page.js` (novo, placeholder)
+  - `app/termos-de-uso/page.js` (novo, placeholder)
+- **Assets:** `public/assets/**` (logo, favicons, retratos, imagens de produto/blog — cópia integral de `design_files/assets`)
+
+Total: **90 arquivos** adicionados no commit da PR (`git diff --stat` contra `main`).
+
+---
+
+## 7. Validação Executada
+
+- ✅ `npm run build` (Next.js 14.2.35) — **sucesso**, 0 erros.
+  - 160 páginas estáticas geradas (135 páginas de produto + páginas de
+    blog + páginas institucionais + 404).
+  - Avisos de lint não-bloqueantes: uso de `<img>` em vez de `next/image`
+    em 2 pontos (`app/conta/page.js`, miniaturas de pedido) — aceitável
+    para thumbnails pequenos e mockados; fonte custom no `layout.js`
+    (padrão esperado no App Router, aviso é falso-positivo de regra
+    legada de `pages/`).
+- ✅ Smoke test via `python3 -m http.server` servindo `web/out/`:
+  - `/`, `/conta/`, `/catalogo/`, `/produto/1-cruzeiro-1944-c0001/`,
+    `/politica-de-privacidade/`, `/termos-de-uso/` → **HTTP 200**.
+  - `/produto/produto-que-nao-existe/` → **HTTP 404** (Melhoria 8 confirmada).
+- ✅ Verificação programática de `products.json`: 139 total, 135 reais + 4 samples.
+
+### Não executado neste ciclo (fora do orçamento/escopo)
+- Testes end-to-end automatizados (Playwright/Cypress) — não solicitados no megaprompt.
+- Deploy real em ambiente Hostinger do cliente — depende de credenciais/acesso não fornecidos.
+
+---
+
+## 8. Próximos Passos Recomendados (Fase Futura)
+
+1. **Confirmar o plano de hospedagem Hostinger real do cliente.** Se
+   suportar Node.js, considerar migrar de `output: 'export'` para SSR/ISR
+   e mover checkout/frete para API routes server-side (mais seguro para
+   cálculo de preços e menos exposto a manipulação client-side).
+2. **Cadastro real da aba "Moedas"** — assim que o cliente fornecer os
+   dados reais de moedas/acessórios, remover a flag `isSample`/substituir
+   os 4 itens de demonstração por produtos reais com estoque correto.
+3. **Melhoria 3 (autenticação real)** — implementar backend de auth
+   (ex.: NextAuth + banco de usuários), aproveitando o campo `passwordHash`
+   já reservado no comentário de `app/conta/page.js`.
+4. **Melhoria 11 (submissão real do formulário de contato)** — integrar
+   com serviço de e-mail transacional (ex.: Resend, SendGrid) ou API route
+   dedicada, quando a arquitetura de hospedagem permitir.
+5. **Conteúdo jurídico definitivo** para `/politica-de-privacidade` e
+   `/termos-de-uso`, a ser fornecido pelo jurídico do cliente.
+6. **Confirmar com o cliente as 4 correções de dados** listadas no
+   `data-quality-log.md` (especialmente os campos de "Assinaturas ou
+   chancelas" deixados vazios em C0006/C0055).
+
+---
+
+## 9. Anexo — Log de Qualidade de Dados
+
+Ver arquivo completo: [`data-quality-log.md`](./data-quality-log.md)
+
+Resumo das 4 correções + observação sobre a aba Moedas vazia (reproduzido
+na Seção 5 deste relatório).
+
+---
+
+## 10. Definição de Pronto (Section 12 do megaprompt) — Checklist Final
+
+- [x] Build de produção sem erros (`npm run build` ✅)
+- [x] Fidelidade visual ao protótipo (design system `styles.css` copiado
+      literalmente; estrutura de cada página recriada 1:1 a partir do HTML original)
+- [x] Arquitetura compatível com Hostinger (export estático, documentado)
+- [x] Rotas dinâmicas funcionando (`/produto/[slug]`, `/diario/[slug]` com `generateStaticParams`)
+- [x] Dados coerentes com a planilha real (135 cédulas + 4 itens sample marcados e ocultos)
+- [x] Relatório Final entregue (este documento)
+- [x] Pull Request criado: https://github.com/Derek-PCoelho/Lazecca/pull/1

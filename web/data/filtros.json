@@ -1,0 +1,135 @@
+{
+  "denominacoes": [
+    {
+      "nome": "1 CRUZEIRO",
+      "count": 26
+    },
+    {
+      "nome": "2 CRUZEIROS",
+      "count": 10
+    },
+    {
+      "nome": "5 CRUZEIROS",
+      "count": 37
+    },
+    {
+      "nome": "10 CRUZEIROS",
+      "count": 15
+    },
+    {
+      "nome": "20 CRUZEIROS",
+      "count": 8
+    },
+    {
+      "nome": "50 CRUZEIROS",
+      "count": 24
+    },
+    {
+      "nome": "100 CRUZEIROS",
+      "count": 7
+    },
+    {
+      "nome": "200 CRUZEIROS",
+      "count": 3
+    },
+    {
+      "nome": "10 CRUZEIROS (COM CARIMBO 1 CENTAVO)",
+      "count": 4
+    },
+    {
+      "nome": "1 ESTAMPA",
+      "count": 1
+    }
+  ],
+  "anos": [
+    {
+      "ano": 1658,
+      "count": 1
+    },
+    {
+      "ano": 1944,
+      "count": 5
+    },
+    {
+      "ano": 1953,
+      "count": 4
+    },
+    {
+      "ano": 1954,
+      "count": 13
+    },
+    {
+      "ano": 1955,
+      "count": 12
+    },
+    {
+      "ano": 1956,
+      "count": 20
+    },
+    {
+      "ano": 1958,
+      "count": 19
+    },
+    {
+      "ano": 1959,
+      "count": 5
+    },
+    {
+      "ano": 1960,
+      "count": 4
+    },
+    {
+      "ano": 1961,
+      "count": 9
+    },
+    {
+      "ano": 1962,
+      "count": 10
+    },
+    {
+      "ano": 1963,
+      "count": 6
+    },
+    {
+      "ano": 1964,
+      "count": 9
+    },
+    {
+      "ano": 1966,
+      "count": 8
+    },
+    {
+      "ano": 1967,
+      "count": 10
+    }
+  ],
+  "estados": [
+    {
+      "estado": "FE",
+      "count": 85
+    },
+    {
+      "estado": "SOB",
+      "count": 43
+    },
+    {
+      "estado": "MBC",
+      "count": 5
+    },
+    {
+      "estado": "N/D",
+      "count": 1
+    },
+    {
+      "estado": "BC",
+      "count": 1
+    }
+  ],
+  "padroes": [
+    "Cruzeiro (1942-1967)",
+    "Império (1822-1889)",
+    "Dólar Americano",
+    "Antiguidade Romana",
+    "Acessório"
+  ]
+}

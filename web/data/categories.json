@@ -1,0 +1,26 @@
+[
+  {
+    "slug": "cedulas-br",
+    "name": "Cédulas Brasileiras",
+    "count": 135,
+    "icon": "bill"
+  },
+  {
+    "slug": "moedas-br",
+    "name": "Moedas Brasileiras",
+    "count": 1,
+    "icon": "coin"
+  },
+  {
+    "slug": "moedas-int",
+    "name": "Moedas Estrangeiras",
+    "count": 2,
+    "icon": "coin"
+  },
+  {
+    "slug": "acessorios",
+    "name": "Acessórios",
+    "count": 1,
+    "icon": "lens"
+  }
+]
