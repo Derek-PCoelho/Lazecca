@@ -1,0 +1,102 @@
+[
+  {
+    "slug": "como-avaliar-conservacao",
+    "title": "Como avaliar o estado de conservação de uma cédula",
+    "excerpt": "FE, SOB, MBC, BC — entenda o que essas siglas significam e comece a olhar suas cédulas com outros olhos.",
+    "date": "28 Ago 2026",
+    "readTime": "6 min",
+    "category": "Guias",
+    "cover": "assets/blog/artigo-conservacao.png",
+    "author": "Dr. Sergio Costa"
+  },
+  {
+    "slug": "padrao-cruzeiro-1942",
+    "title": "O padrão Cruzeiro (1942-1967): 25 anos que passaram nas nossas mãos",
+    "excerpt": "De Getúlio Vargas ao golpe militar: um quarto de século de história brasileira contado pelas cédulas que passaram de mão em mão.",
+    "date": "19 Ago 2026",
+    "readTime": "11 min",
+    "category": "História",
+    "cover": "assets/blog/artigo-padrao-cruzeiro.png",
+    "author": "Dr. Sergio Costa"
+  },
+  {
+    "slug": "cedulas-em-sequencia",
+    "title": "Por que cédulas em sequência valem mais",
+    "excerpt": "Numeração consecutiva revela peças poupadas em bloco no momento da emissão — e isso muda o preço.",
+    "date": "05 Ago 2026",
+    "readTime": "5 min",
+    "category": "Guias",
+    "cover": "assets/blog/artigo-sequencias.png",
+    "author": "Dr. Sergio Costa"
+  },
+  {
+    "slug": "guia-armazenamento",
+    "title": "Como guardar suas cédulas do jeito certo",
+    "excerpt": "Cápsulas, álbuns, luvas, umidade, luz: os erros mais comuns que podem estragar sua coleção — e como evitá-los.",
+    "date": "22 Jul 2026",
+    "readTime": "9 min",
+    "category": "Guias",
+    "cover": "assets/blog/artigo-armazenamento.png",
+    "author": "Dr. Sergio Costa"
+  },
+  {
+    "slug": "padrao-mil-reis",
+    "title": "O padrão Mil-Réis: o dinheiro do Brasil Império e da Primeira República",
+    "excerpt": "Antes do Cruzeiro veio o Mil-Réis — 105 anos de moeda brasileira, de Dom João VI a Getúlio Vargas.",
+    "date": "10 Set 2026",
+    "readTime": "10 min",
+    "category": "História",
+    "cover": "assets/blog/artigo-mil-reis.png",
+    "author": "Dr. Sergio Costa"
+  },
+  {
+    "slug": "cedulas-com-carimbo-1967",
+    "title": "Cédulas com carimbo: quando o dinheiro vira o outro dinheiro",
+    "excerpt": "A reforma monetária de 1967 e as raras cédulas de Cruzeiro sobrecarimbadas com \"1 Centavo\". Um artefato único da história brasileira.",
+    "date": "03 Set 2026",
+    "readTime": "7 min",
+    "category": "Curiosidades",
+    "cover": "assets/blog/artigo-carimbos.png",
+    "author": "Dr. Sergio Costa"
+  },
+  {
+    "slug": "assinaturas-tesouro-nacional",
+    "title": "As assinaturas nas cédulas: quem eram esses homens?",
+    "excerpt": "Osvaldo Aranha, Eugênio Gudin, Otávio Bulhões — os ministros da Fazenda que carimbaram suas assinaturas no dinheiro do brasileiro.",
+    "date": "15 Set 2026",
+    "readTime": "8 min",
+    "category": "História",
+    "cover": "assets/blog/artigo-assinaturas.png",
+    "author": "Dr. Sergio Costa"
+  },
+  {
+    "slug": "iniciando-uma-colecao",
+    "title": "Começando uma coleção de cédulas do zero",
+    "excerpt": "Por onde começar, quanto investir no primeiro ano, quais denominações priorizar. Um guia honesto para quem está entrando no hobby.",
+    "date": "01 Set 2026",
+    "readTime": "9 min",
+    "category": "Guias",
+    "cover": "assets/blog/artigo-iniciando-colecao.png",
+    "author": "Dr. Sergio Costa"
+  },
+  {
+    "slug": "a-arte-do-guilloche",
+    "title": "A arte invisível do guilloché",
+    "excerpt": "Aquelas linhas geométricas ornamentais que preenchem as bordas de toda cédula antiga têm um nome — e uma técnica de séculos por trás.",
+    "date": "08 Set 2026",
+    "readTime": "6 min",
+    "category": "Estética",
+    "cover": "assets/blog/artigo-guilloche.png",
+    "author": "Dr. Sergio Costa"
+  },
+  {
+    "slug": "como-autenticamos-uma-cedula",
+    "title": "Como autenticamos uma cédula: o processo por trás do certificado",
+    "excerpt": "Papel, tintas, guilloché, gramatura, marcas d'água. O que o Dr. Sergio olha antes de emitir cada certificado La Zecca.",
+    "date": "12 Set 2026",
+    "readTime": "10 min",
+    "category": "Guias",
+    "cover": "assets/blog/artigo-autenticacao.png",
+    "author": "Dr. Sergio Costa"
+  }
+]

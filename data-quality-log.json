@@ -1,0 +1,30 @@
+[
+  {
+    "id": "C0056",
+    "campo": "Ano",
+    "valorOriginal": 1658,
+    "valorCorrigido": 1958,
+    "motivo": "Ano 1658 é fisicamente incompatível com o padrão Cruzeiro (1942-1967) e diverge das demais linhas do grupo de referência C069 (todas 1958). Corrigido para 1958."
+  },
+  {
+    "id": "C0020",
+    "campo": "Denominação",
+    "valorOriginal": "1 ESTAMPA",
+    "valorCorrigido": "1 CRUZEIRO",
+    "motivo": "Valor claramente trocado de coluna (duplicava o campo Estampa/família). Todas as demais linhas do grupo de referência C012 são \"1 CRUZEIRO\". Corrigido para \"1 CRUZEIRO\"."
+  },
+  {
+    "id": "C0006",
+    "campo": "Assinaturas ou chancelas",
+    "valorOriginal": "1 ESTAMPA",
+    "valorCorrigido": "(vazio)",
+    "motivo": "O campo continha o valor da coluna \"Estampa ou família\" em vez de nomes de assinantes do Tesouro. Como não é possível inferir com segurança os signatários reais a partir de dados adjacentes, o campo foi importado vazio para preenchimento manual futuro pelo cliente."
+  },
+  {
+    "id": "C0055",
+    "campo": "Assinaturas ou chancelas",
+    "valorOriginal": "2 ESTAMPA",
+    "valorCorrigido": "(vazio)",
+    "motivo": "O campo continha o valor da coluna \"Estampa ou família\" em vez de nomes de assinantes do Tesouro. Como não é possível inferir com segurança os signatários reais a partir de dados adjacentes, o campo foi importado vazio para preenchimento manual futuro pelo cliente."
+  }
+]
