@@ -9,14 +9,29 @@ import {
   validatePhone,
   onlyDigits,
 } from '@/lib/validation';
+import { checkRateLimit, getClientIp } from '@/lib/rateLimit';
 
 export const dynamic = 'force-dynamic';
+
+// Bloco 5 — Rate limiting: no máximo 20 cadastros por IP a cada hora, para
+// dificultar criação automatizada de contas em massa.
+const REGISTER_WINDOW_MS = 60 * 60 * 1000;
+const REGISTER_MAX_ATTEMPTS = 20;
 
 // Bloco 6 — todas as validações abaixo são a FONTE DE VERDADE (o frontend
 // replica as mesmas regras só para feedback rápido, mas nunca é confiável
 // por si só: qualquer requisição direta à API passa por aqui).
 export async function POST(request) {
   try {
+    const ip = getClientIp(request);
+    const rl = checkRateLimit(`register:${ip}`, { windowMs: REGISTER_WINDOW_MS, max: REGISTER_MAX_ATTEMPTS });
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: 'Muitas tentativas de cadastro. Tente novamente mais tarde.' },
+        { status: 429, headers: { 'Retry-After': String(rl.retryAfterSeconds) } }
+      );
+    }
+
     const body = await request.json();
     const { firstName, lastName, email, password, cpf, phone, wantsNewsletter } = body || {};
 

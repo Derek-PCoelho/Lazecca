@@ -312,3 +312,178 @@ nenhum arquivo do repositório):
   confirmação simulada de pagamento, testes de carga, testes de acessibilidade
   automatizados) não foram executados nesta sessão — apenas smoke tests
   manuais via `curl` nas rotas e fluxos principais.
+
+---
+
+## 12. Fase 9 (adendo) — Blocos 1-10: Conta/Pedidos, Estoque, Segurança (parcial)
+
+Continuação do trabalho pós-deploy, cobrindo o pedido consolidado em 10
+blocos (Bloco 1 a Bloco 10). Trabalho entregue em três Pull Requests
+sequenciais: PR #2 (base, mergeado), PR #3 (frete real + validações,
+mergeado) e **PR #4** (este ciclo).
+
+### 12.1 Bloco 1 (conclusão) — Dashboard de Minha Conta
+
+- `/conta` reestruturada como dashboard com 5 abas reais — Pedidos,
+  Favoritos, Certificados, Endereços, Dados Pessoais — substituindo os 5
+  links mortos (`href="#"`) do protótipo original.
+- `/conta/pedidos/[id]`: página de detalhes do pedido (itens com imagem e
+  certificado, endereço de entrega, forma/status de pagamento, breakdown de
+  valores, código de rastreio quando preenchido pelo admin, botão de
+  cancelamento).
+- Formulário de cadastro em `/conta` usa `lib/validation.js` (CPF, senha
+  forte, e-mail, telefone) com mensagens de erro por campo.
+
+### 12.2 Bloco 8 (fundação) — Cancelamento e estorno
+
+- `POST /api/orders/[id]/cancel`: cancelamento pelo cliente, respeitando o
+  prazo de arrependimento do CDC Art. 49 (7 dias corridos da compra),
+  devolvendo o estoque de cada item em uma transação atômica.
+- Painel admin: campo de código de rastreio + cancelamento com motivo
+  obrigatório, também devolvendo estoque e marcando o pagamento como
+  `REFUNDED` quando o pedido já estava pago.
+- Schema: `trackingCode`, `cancelReason`, `cancelledAt` adicionados ao
+  modelo `Order` (aplicado em produção via `prisma db push`).
+
+### 12.3 Bloco 4 — Estoque (concorrência e reserva)
+
+- `POST /api/orders`: decremento de estoque reescrito para usar
+  **compare-and-swap** (`updateMany` com condição `stock >= quantidade`)
+  dentro da transação — elimina a condição de corrida em compras
+  simultâneas da última unidade de uma peça única. Quando outra pessoa já
+  levou a peça, a API retorna `409` com mensagem clara para o comprador que
+  perdeu a corrida.
+- **Evidência de teste**: script de concorrência simulando 2 requisições
+  simultâneas de compra da última unidade de um produto — resultado:
+  apenas 1 compra teve sucesso, a outra recebeu 409, e o estoque final no
+  banco nunca ficou negativo. (Script de teste temporário, não incluído no
+  repositório.)
+- Novo endpoint `POST /api/cron/release-expired-orders` (protegido por
+  header `X-Cron-Secret`, validado contra `CRON_SECRET`): varre pedidos
+  `AWAITING_PAYMENT` cujo prazo de Pix/boleto expirou, devolve o estoque de
+  cada item e cancela o pedido automaticamente.
+  - **Testado manualmente em produção local**: requisição sem header →
+    `401`; com header incorreto → `401`; com header correto → `200` com
+    `{"ok":true,"releasedCount":0,...}`.
+  - **Pendência de infraestrutura (ação do cliente)**: este endpoint precisa
+    ser agendado para rodar a cada 10-15 minutos por um disparador externo
+    (cron do hPanel Hostinger, ou serviço gratuito como cron-job.org
+    apontando para `https://lazecca.com.br/api/cron/release-expired-orders`
+    com o header `X-Cron-Secret` configurado). Isso não pode ser concluído
+    a partir do código — requer acesso ao painel do cliente.
+- Decisão de negócio documentada em `lib/data.js`: peças esgotadas
+  permanecem visíveis no catálogo (marcadas "Esgotado"), nunca
+  ocultadas/removidas, por serem peças únicas e não repostas — mantendo
+  valor de portfólio/SEO mesmo após a venda.
+
+### 12.4 Bloco 5 — Segurança
+
+**Itens implementados e verificados nesta etapa:**
+
+- **Cabeçalhos HTTP de segurança** (`next.config.mjs` → `async headers()`):
+  `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`,
+  `Referrer-Policy: strict-origin-when-cross-origin`,
+  `Permissions-Policy: camera=(), microphone=(), geolocation=()`,
+  `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload`
+  e uma `Content-Security-Policy` moderada (compatível com estilos inline
+  usados no site e com o runtime do Next.js).
+  **Evidência**: `curl -I` contra build de produção local (`next start`)
+  confirmou todos os 6 cabeçalhos presentes na resposta.
+- **Rate limiting** (`lib/rateLimit.js`, em memória, por IP):
+  - `/api/auth/login`: máx. 10 tentativas / 15 min por IP.
+  - `/api/auth/register`: máx. 20 cadastros / hora por IP.
+  - `/api/auth/forgot-password`: máx. 5 solicitações / hora por IP.
+  - **Evidência**: 12 requisições consecutivas contra `/api/auth/login` com
+    credenciais inválidas → as 10 primeiras retornaram `401` (credenciais
+    incorretas), a 11ª e 12ª retornaram `429` (limite excedido), com header
+    `Retry-After`.
+  - **Limitação conhecida e documentada no código**: a implementação é em
+    memória (por processo Node), adequada ao deploy atual (`next start`
+    single-process na Hostinger). Se o app migrar para múltiplas
+    instâncias/serverless no futuro, será necessário um armazenamento
+    compartilhado (Redis, banco, etc.).
+- **Assinatura de webhook do Mercado Pago** (`lib/mercadopago.js` →
+  `verifyWebhookSignature`): implementada a validação HMAC-SHA256 conforme
+  especificação oficial do Mercado Pago (`x-signature` + `x-request-id`).
+  Enquanto `MERCADOPAGO_WEBHOOK_SECRET` não for preenchido, a verificação é
+  pulada (mesmo comportamento "modo simulado" do restante da integração);
+  assim que o cliente configurar o segredo no painel do Mercado Pago e na
+  variável de ambiente, toda notificação passa a ser validada, e
+  notificações forjadas são rejeitadas com `401`.
+- **Checagem de vazamento de variáveis de ambiente sensíveis no bundle
+  client**: `grep` em `.next/static` (após build de produção) por
+  `DATABASE_URL`, `JWT_SECRET`, `MERCADOPAGO_ACCESS_TOKEN`,
+  `MERCADOPAGO_WEBHOOK_SECRET`, `CRON_SECRET`, `SMTP_PASSWORD` — **nenhuma
+  ocorrência encontrada**. Também confirmado por varredura de todos os
+  arquivos `'use client'` que nenhum usa `process.env.*` fora do prefixo
+  `NEXT_PUBLIC_*` (única forma seria exposição correta e intencional).
+- **`npm audit`**: aplicado `overrides` no `package.json` para elevar
+  `postcss` → `8.5.28` e `glob` → `10.5.0`, eliminando 4 das 5
+  vulnerabilidades reportadas (XSS/path-traversal do PostCSS e injeção de
+  comando do glob usado apenas em ferramentas de lint, não em runtime).
+  Restou **1 vulnerabilidade crítica** relativa ao próprio `next@14.2.35`
+  (diversas CVEs corrigidas apenas a partir do `next@15.5.10`/`16.x`) — a
+  correção completa exigiria upgrade de major version (mudança de ruptura,
+  fora do escopo deste ciclo por exigir testes de regressão completos);
+  build (`next build`) foi reverificado com sucesso após os overrides
+  aplicados.
+- **HTTPS em produção**: confirmado via `curl -I https://lazecca.com.br/`
+  → `HTTP/2 200`, e `curl -I http://lazecca.com.br/` → `301` redirecionando
+  para a versão HTTPS. HSTS ativo tanto pelo cabeçalho aplicado pelo Next.js
+  quanto pela CDN da Hostinger.
+- **Confirmação de JWT/logout**: `lib/auth.js` já assina JWT com expiração
+  de 7 dias (`JWT_EXPIRES_IN`) e usa cookie `httpOnly` + `sameSite: 'lax'`
+  (mitigação CSRF parcial); `POST /api/auth/logout` limpa o cookie de sessão
+  corretamente (`clearSessionCookie()`), efetivamente invalidando a sessão
+  no navegador. Nenhuma alteração de código foi necessária — apenas
+  confirmação.
+- **Proteção de rotas admin**: reconfirmada nesta etapa — proteção em duas
+  camadas (redirecionamento em `layout.js` para não-admin no lado servidor;
+  `requireAdmin()` chamado em toda rota `/api/admin/*`).
+
+**Itens do Bloco 5 que permanecem pendentes** (dependem de acesso externo
+ou de decisão do cliente, não apenas de código):
+- Upgrade major do Next.js para eliminar a última vulnerabilidade crítica
+  restante do `npm audit` (mudança de ruptura — recomenda-se planejar como
+  tarefa dedicada, com bateria de regressão completa).
+- CSRF: mitigação atual (`sameSite: 'lax'`) é considerada adequada para o
+  perfil de risco do site (não há endpoints GET que alterem estado); não
+  foi adicionado token CSRF explícito por não haver indício de necessidade
+  adicional, mas fica registrado como possível endurecimento futuro.
+
+### 12.5 Bloco 3 — Testes funcionais ponta a ponta
+
+**Pendência explícita**: a especificação original do Bloco 3 pede teste de
+"migração do carrinho de convidado para o carrinho autenticado no login",
+mas o carrinho de convidado foi **intencionalmente removido** em etapa
+anterior deste projeto (a pedido explícito do cliente/orientador da tarefa,
+para simplificar o controle de estoque — login agora é exigido antes de
+adicionar itens ao carrinho). Este sub-item específico do Bloco 3 não pode
+ser executado como descrito originalmente e requer confirmação do cliente
+sobre se a intenção era testar o fluxo atual (carrinho sempre autenticado)
+ou se o carrinho de convidado deveria ser reintroduzido.
+
+### 12.6 Blocos ainda não iniciados neste ciclo
+
+- **Bloco 2** (SMTP real): bloqueado por falta de credenciais SMTP do
+  cliente — sistema já pré-implementado, basta preencher
+  `SMTP_HOST`/`SMTP_USER`/`SMTP_PASSWORD` em produção.
+- **Bloco 7** (LGPD/cookie banner): conteúdo legal completo e banner de
+  consentimento de cookies ainda não implementados.
+- **Bloco 9** (SEO): sitemap.xml, robots.txt, meta tags por página e
+  schema.org (JSON-LD) ainda não implementados.
+- **Bloco 10** (checagens finais): confirmação de link do WhatsApp,
+  confirmação final de remoção de artefatos do login fake do protótipo
+  antigo, e confirmação do backup do MySQL no painel Hostinger — pendentes.
+
+### 12.7 Evidências de build
+
+- `next build` executado com sucesso após cada conjunto de alterações deste
+  ciclo (Bloco 1/8, depois Bloco 4/5). Última verificação: build limpo após
+  os `overrides` de dependências do `npm audit`, com todas as rotas novas
+  (`/api/orders/[id]/cancel`, `/conta/pedidos/[id]`,
+  `/api/cron/release-expired-orders`) presentes no manifesto de rotas.
+- Testes manuais via `curl` contra build de produção local (`next start`)
+  confirmaram: cabeçalhos de segurança presentes, rate limiting de login
+  ativando corretamente no 11º request, e autenticação por segredo do
+  endpoint de cron funcionando (`401`/`401`/`200` conforme esperado).

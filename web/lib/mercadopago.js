@@ -28,10 +28,67 @@
 //      código é necessária.
 // =============================================================================
 
+import { createHmac, timingSafeEqual } from 'crypto';
+
 const MP_API_BASE = 'https://api.mercadopago.com';
 
 export function isConfigured() {
   return !!process.env.MERCADOPAGO_ACCESS_TOKEN;
+}
+
+/**
+ * Bloco 5 — Verificação de assinatura do webhook do Mercado Pago.
+ * Documentação oficial: https://www.mercadopago.com.br/developers/pt/docs/checkout-api/webhooks
+ *
+ * O MP assina cada notificação com HMAC-SHA256 usando o segredo do webhook
+ * (MERCADOPAGO_WEBHOOK_SECRET, obtido no painel do MP em "Webhooks" >
+ * "Assinatura secreta"). O cabeçalho `x-signature` vem no formato:
+ *   ts=1704908010,v1=<hash hmac-sha256 hex>
+ * e o "manifest" assinado é a string:
+ *   id:{data.id};request-id:{x-request-id};ts:{ts};
+ * (data.id em minúsculas, conforme exigido pela MP).
+ *
+ * Enquanto MERCADOPAGO_WEBHOOK_SECRET não estiver configurado, a verificação
+ * é pulada (retorna true) — coerente com o restante do módulo, que roda em
+ * modo simulado até as credenciais serem preenchidas pelo cliente. Assim que
+ * o segredo for configurado, TODA notificação passa a ser validada antes de
+ * ser processada, e notificações forjadas/sem assinatura válida são rejeitadas.
+ */
+export function verifyWebhookSignature(request, dataId) {
+  const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET;
+  if (!secret) return { valid: true, skipped: true };
+
+  const signatureHeader = request.headers.get('x-signature');
+  const requestId = request.headers.get('x-request-id');
+  if (!signatureHeader || !requestId || !dataId) {
+    return { valid: false, reason: 'Cabeçalhos de assinatura ausentes.' };
+  }
+
+  const parts = Object.fromEntries(
+    signatureHeader.split(',').map((piece) => {
+      const [key, value] = piece.split('=').map((s) => s.trim());
+      return [key, value];
+    })
+  );
+  const { ts, v1: receivedHash } = parts;
+  if (!ts || !receivedHash) {
+    return { valid: false, reason: 'Formato de x-signature inválido.' };
+  }
+
+  const manifest = `id:${String(dataId).toLowerCase()};request-id:${requestId};ts:${ts};`;
+  const expectedHash = createHmac('sha256', secret).update(manifest).digest('hex');
+
+  try {
+    const a = Buffer.from(expectedHash, 'hex');
+    const b = Buffer.from(receivedHash, 'hex');
+    if (a.length !== b.length || !timingSafeEqual(a, b)) {
+      return { valid: false, reason: 'Assinatura HMAC não confere.' };
+    }
+  } catch {
+    return { valid: false, reason: 'Assinatura HMAC malformada.' };
+  }
+
+  return { valid: true };
 }
 
 function authHeaders() {
