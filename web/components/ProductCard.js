@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import Icon from './Icon';
@@ -11,12 +12,16 @@ import { addToCart } from '@/lib/cart';
 // Melhoria 13: botão "Comprar" respeita estoque (stock alimentado pela coluna Quantidade
 // da planilha real) — exibe "Esgotado" e desabilita quando stock <= 0.
 export default function ProductCard({ product: p }) {
+  const router = useRouter();
   const outOfStock = typeof p.stock === 'number' && p.stock <= 0;
 
   const handleBuy = async (e) => {
     e.preventDefault();
     if (outOfStock) return;
-    await addToCart(p.id);
+    const result = await addToCart(p.id);
+    if (!result.ok && result.reason === 'auth-required') {
+      router.push(`/conta?redirect=${encodeURIComponent('/produto/' + p.slug)}`);
+    }
   };
 
   return (

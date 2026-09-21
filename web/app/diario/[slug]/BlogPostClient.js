@@ -6,6 +6,16 @@ import Icon from '@/components/Icon';
 
 // Recriado literalmente de design_files/blog-post.html
 export default function BlogPostClient({ post, articleBody, related }) {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://lazecca.com.br';
+  const postUrl = `${siteUrl}/diario/${post.slug}`;
+  const shareText = encodeURIComponent(post.title);
+  const shareLinks = {
+    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}`,
+    // Instagram não tem endpoint de compartilhamento web direto — copia o link para colar no Story/Bio.
+    instagram: `https://www.instagram.com/?url=${encodeURIComponent(postUrl)}`,
+    whatsapp: `https://wa.me/?text=${shareText}%20${encodeURIComponent(postUrl)}`,
+    email: `mailto:?subject=${shareText}&body=${encodeURIComponent(postUrl)}`,
+  };
   return (
     <>
       <Header page="blog" />
@@ -42,16 +52,16 @@ export default function BlogPostClient({ post, articleBody, related }) {
 
         <div className="article-share">
           <span>Compartilhar</span>
-          <a href="#" className="share-btn" aria-label="Compartilhar no Facebook">
+          <a href={shareLinks.facebook} target="_blank" rel="noopener noreferrer" className="share-btn" aria-label="Compartilhar no Facebook">
             <Icon name="facebook" size={16} />
           </a>
-          <a href="#" className="share-btn" aria-label="Compartilhar no Instagram">
+          <a href={shareLinks.instagram} target="_blank" rel="noopener noreferrer" className="share-btn" aria-label="Compartilhar no Instagram">
             <Icon name="instagram" size={16} />
           </a>
-          <a href="#" className="share-btn" aria-label="Compartilhar no WhatsApp">
+          <a href={shareLinks.whatsapp} target="_blank" rel="noopener noreferrer" className="share-btn" aria-label="Compartilhar no WhatsApp">
             <Icon name="whatsapp" size={16} />
           </a>
-          <a href="#" className="share-btn" aria-label="Compartilhar por e-mail">
+          <a href={shareLinks.email} className="share-btn" aria-label="Compartilhar por e-mail">
             <Icon name="mail" size={16} />
           </a>
         </div>

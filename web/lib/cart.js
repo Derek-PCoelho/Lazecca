@@ -1,9 +1,10 @@
 'use client';
 
 // La Zecca — Carrinho persistente (Fase 8)
-// Substitui o localStorage por chamadas reais à API (/api/cart/*), que por
-// sua vez persiste no banco (Cart/CartItem, Prisma) — tanto para usuários
-// logados quanto visitantes (sessão de convidado via cookie httpOnly).
+// Chamadas reais à API (/api/cart/*), que persiste no banco (Cart/CartItem,
+// Prisma). O carrinho SEMPRE pertence a um usuário autenticado — não existe
+// mais carrinho de convidado. Qualquer chamada sem sessão ativa recebe 401
+// e o reason 'auth-required', que a UI usa para redirecionar para /conta.
 
 const CART_EVENT = 'lz-cart-changed';
 

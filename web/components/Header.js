@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import Icon from './Icon';
@@ -10,7 +11,9 @@ import { CONTACT } from '@/lib/config';
 // Recriado literalmente de design_files/js/components.jsx — Header
 // page prop identifica o item ativo da nav-primary (mesmos 6 links do protótipo)
 export default function Header({ page = 'home' }) {
+  const router = useRouter();
   const [count, setCount] = useState(0);
+  const [query, setQuery] = useState('');
 
   useEffect(() => {
     let mounted = true;
@@ -26,6 +29,12 @@ export default function Header({ page = 'home' }) {
       window.removeEventListener(CART_CHANGED_EVENT, update);
     };
   }, []);
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    const q = query.trim();
+    router.push(q ? `/catalogo?q=${encodeURIComponent(q)}` : '/catalogo');
+  };
 
   const nav = [
     { key: 'home', label: 'Início', href: '/' },
@@ -60,18 +69,26 @@ export default function Header({ page = 'home' }) {
           </div>
         </Link>
 
-        <div className="header-search">
-          <Icon name="search" size={18} />
-          <input type="search" placeholder="Buscar por peça, país, ano..." aria-label="Buscar" />
-        </div>
+        <form className="header-search" onSubmit={handleSearch} role="search">
+          <button type="submit" aria-label="Buscar" style={{ background: 'none', border: 'none', padding: 0, display: 'flex', cursor: 'pointer' }}>
+            <Icon name="search" size={18} />
+          </button>
+          <input
+            type="search"
+            placeholder="Buscar por peça, país, ano..."
+            aria-label="Buscar"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </form>
 
         <div className="header-actions">
           <Link className="icon-btn" href="/conta" aria-label="Minha conta">
             <Icon name="user" />
           </Link>
-          <a className="icon-btn" href="#" aria-label="Favoritos">
+          <Link className="icon-btn" href="/favoritos" aria-label="Favoritos">
             <Icon name="heart" />
-          </a>
+          </Link>
           <Link className="icon-btn" href="/carrinho" aria-label="Carrinho">
             <Icon name="cart" />
             {count > 0 && <span className="badge">{count}</span>}

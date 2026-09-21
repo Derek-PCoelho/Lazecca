@@ -15,6 +15,7 @@ export async function GET() {
       role: user.role,
       cpf: user.cpf,
       phone: user.phone,
+      wantsNewsletter: user.wantsNewsletter,
     },
   });
 }
