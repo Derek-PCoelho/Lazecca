@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { createPortal } from 'react-dom';
+import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import Icon from './Icon';
@@ -10,10 +11,24 @@ import { CONTACT } from '@/lib/config';
 
 // Recriado literalmente de design_files/js/components.jsx — Header
 // page prop identifica o item ativo da nav-primary (mesmos 6 links do protótipo)
+//
+// Melhoria (mobile): a nav horizontal (.nav-primary) é ótima em telas largas,
+// mas em telas estreitas (<=900px) ela quebrava em 2-3 linhas dentro do
+// header, inflando a altura do cabeçalho. Em vez de alterar o layout desktop,
+// adicionamos um botão hambúrguer + drawer lateral que só existem/aparecem
+// em mobile (ver @media (max-width: 900px) em globals.css); em desktop o
+// botão fica com display:none e a nav horizontal original permanece intocada.
 export default function Header({ page = 'home' }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [count, setCount] = useState(0);
   const [query, setQuery] = useState('');
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -30,10 +45,33 @@ export default function Header({ page = 'home' }) {
     };
   }, []);
 
+  // Fecha o drawer mobile automaticamente ao navegar para outra rota
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
+
+  // Trava o scroll do body enquanto o drawer mobile está aberto + permite
+  // fechar com a tecla Esc (acessibilidade)
+  useEffect(() => {
+    if (menuOpen) {
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      const onKeyDown = (e) => {
+        if (e.key === 'Escape') setMenuOpen(false);
+      };
+      window.addEventListener('keydown', onKeyDown);
+      return () => {
+        document.body.style.overflow = prevOverflow;
+        window.removeEventListener('keydown', onKeyDown);
+      };
+    }
+  }, [menuOpen]);
+
   const handleSearch = (e) => {
     e.preventDefault();
     const q = query.trim();
     router.push(q ? `/catalogo?q=${encodeURIComponent(q)}` : '/catalogo');
+    setMenuOpen(false);
   };
 
   const nav = [
@@ -93,6 +131,16 @@ export default function Header({ page = 'home' }) {
             <Icon name="cart" />
             {count > 0 && <span className="badge">{count}</span>}
           </Link>
+          <button
+            type="button"
+            className="icon-btn nav-toggle"
+            aria-label={menuOpen ? 'Fechar menu' : 'Abrir menu'}
+            aria-expanded={menuOpen}
+            aria-controls="mobile-nav-drawer"
+            onClick={() => setMenuOpen((v) => !v)}
+          >
+            <Icon name={menuOpen ? 'x' : 'menu'} />
+          </button>
         </div>
       </div>
 
@@ -109,6 +157,56 @@ export default function Header({ page = 'home' }) {
           </ul>
         </div>
       </nav>
+
+      {/* Drawer mobile — só existe/aparece em telas <=900px (ver globals.css).
+          Renderizado via portal em document.body (não dentro de <header>)
+          porque o header usa backdrop-filter, que cria um "containing block"
+          para position:fixed — isso fazia o overlay/drawer ficarem restritos
+          à altura do header em vez de cobrir a tela inteira. Em desktop o
+          CSS mantém tudo com display:none, então isso não afeta o layout
+          desktop de nenhuma forma. */}
+      {mounted &&
+        createPortal(
+          <>
+            <div
+              className={`nav-drawer-overlay${menuOpen ? ' is-open' : ''}`}
+              onClick={() => setMenuOpen(false)}
+              aria-hidden={!menuOpen}
+            />
+            <div
+              id="mobile-nav-drawer"
+              className={`nav-drawer${menuOpen ? ' is-open' : ''}`}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Menu de navegação"
+            >
+              <div className="nav-drawer-head">
+                <span className="header-logo-text" style={{ fontSize: 18 }}>MENU</span>
+                <button type="button" className="icon-btn" aria-label="Fechar menu" onClick={() => setMenuOpen(false)}>
+                  <Icon name="x" />
+                </button>
+              </div>
+              <ul className="nav-drawer-list">
+                {nav.map((n) => (
+                  <li key={n.key}>
+                    <Link href={n.href} className={page === n.key ? 'active' : ''} onClick={() => setMenuOpen(false)}>
+                      {n.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+              <div className="nav-drawer-foot">
+                <Link href="/conta" onClick={() => setMenuOpen(false)}>
+                  <Icon name="user" size={16} /> Minha Conta
+                </Link>
+                <a href={CONTACT.phoneHref}>
+                  <Icon name="phone" size={16} /> {CONTACT.phoneDisplay}
+                </a>
+              </div>
+            </div>
+          </>,
+          document.body
+        )}
     </header>
   );
 }

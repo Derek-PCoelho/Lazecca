@@ -405,14 +405,114 @@ h1, h2, h3, h4 {
   background: var(--gold-700);
 }
 
+/* Botão hambúrguer + drawer mobile — inexistentes/ocultos em desktop.
+   Ficam fora do @media de propósito: por padrão devem estar sempre
+   escondidos (display:none / visibility:hidden), e só o media query abaixo
+   os revela em telas estreitas. Isso garante zero impacto no layout desktop. */
+.nav-toggle { display: none; }
+.nav-drawer-overlay {
+  display: none;
+}
+.nav-drawer {
+  display: none;
+}
+
 @media (max-width: 900px) {
   .header-main { grid-template-columns: auto auto; gap: 16px; }
   .header-search { grid-column: 1 / -1; order: 3; max-width: none; }
   .header-actions { justify-self: end; }
   .header-logo img { width: 48px; height: 48px; }
   .header-logo-text { font-size: 20px; }
-  .nav-primary ul { justify-content: flex-start; overflow-x: auto; padding: 0 20px; }
-  .nav-primary a { padding: 12px 12px; font-size: 12px; letter-spacing: 0.1em; white-space: nowrap; }
+
+  /* A nav horizontal original é substituída pelo drawer em mobile,
+     eliminando o wrap em 2-3 linhas dentro do header. */
+  .nav-primary { display: none; }
+
+  /* Botão hambúrguer aparece só em mobile, dentro de .header-actions */
+  .nav-toggle { display: inline-flex; }
+
+  /* Overlay escuro atrás do drawer */
+  .nav-drawer-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(46, 12, 17, 0.55);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+    z-index: 60;
+  }
+  .nav-drawer-overlay.is-open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Drawer lateral deslizante */
+  .nav-drawer {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(320px, 84vw);
+    background: var(--paper);
+    box-shadow: -12px 0 40px -12px rgba(46, 12, 17, 0.35);
+    transform: translateX(100%);
+    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    z-index: 61;
+    padding: 20px 0 24px;
+    overflow-y: auto;
+  }
+  .nav-drawer.is-open { transform: translateX(0); }
+
+  .nav-drawer-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px 16px;
+    border-bottom: 1px solid var(--line-soft);
+    margin-bottom: 8px;
+  }
+
+  .nav-drawer-list {
+    list-style: none;
+    margin: 0;
+    padding: 8px 0;
+  }
+  .nav-drawer-list a {
+    display: block;
+    padding: 14px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-700);
+    border-bottom: 1px solid var(--line-soft);
+    transition: color 0.15s, background 0.15s;
+  }
+  .nav-drawer-list a:hover,
+  .nav-drawer-list a.active {
+    color: var(--burgundy-700);
+    background: var(--paper-soft);
+  }
+
+  .nav-drawer-foot {
+    margin-top: auto;
+    padding: 16px 20px 0;
+    border-top: 1px solid var(--line-soft);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .nav-drawer-foot a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--ink-700);
+  }
+  .nav-drawer-foot a:hover { color: var(--burgundy-700); }
 }
 
 /* Footer */
