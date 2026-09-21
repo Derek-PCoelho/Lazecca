@@ -273,6 +273,9 @@ h1, h2, h3, h4 {
 .header-top a { color: var(--gold-500); }
 .header-top a:hover { color: var(--paper-soft); }
 .header-top .divider { display: inline-block; width: 1px; height: 12px; background: var(--gold-800); margin: 0 12px; vertical-align: middle; opacity: 0.5; }
+/* Ícone de telefone é exclusivo do layout compacto mobile (ver @media abaixo);
+   no desktop o link permanece texto puro, idêntico ao design original. */
+.header-top-phone-icon { display: none; }
 
 .header-main {
   display: grid;
@@ -457,7 +460,7 @@ h1, h2, h3, h4 {
     font-size: 12px;
     white-space: nowrap;
   }
-  .header-top-phone-icon { flex-shrink: 0; }
+  .header-top-phone-icon { display: inline-block; flex-shrink: 0; }
 
   .header-main { grid-template-columns: auto auto; gap: 16px; }
   .header-search { grid-column: 1 / -1; order: 3; max-width: none; }
