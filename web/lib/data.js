@@ -106,6 +106,16 @@ function mapReview(r) {
 // Produtos
 // -----------------------------------------------------------------------------
 
+// Bloco 4 — Decisão de negócio sobre peças esgotadas (stock = 0):
+// MANTIDAS VISÍVEIS no catálogo/página de produto, nunca removidas/ocultas.
+// Motivo: cada peça numismática é um item ÚNICO e sem reposição (não é um
+// SKU genérico que "volta ao estoque"); a ficha técnica, fotos e histórico
+// de uma cédula têm valor de referência/portfólio mesmo depois de vendida
+// (prova de autenticidade e histórico de curadoria do acervo, e também
+// preserva o link/SEO da página em vez de virar 404). O botão de compra é
+// desabilitado e o selo "Esgotado" é exibido (ver ProductCard.js e
+// produto/[slug]/ProductClient.js) — a filtragem abaixo NUNCA usa `stock`
+// como critério de visibilidade, apenas `isActive`/`isSample`.
 export async function getVisibleProducts() {
   const products = await prisma.product.findMany({
     where: { isActive: true, ...(SHOW_SAMPLES ? {} : { isSample: false }) },

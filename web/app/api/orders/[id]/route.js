@@ -8,7 +8,10 @@ export async function GET(request, { params }) {
   const user = await getCurrentUser();
   const order = await prisma.order.findUnique({
     where: { id: params.id },
-    include: { items: true, payment: true },
+    include: {
+      items: { include: { product: { select: { slug: true, certificate: true, images: { take: 1, orderBy: { sortOrder: 'asc' } } } } } },
+      payment: true,
+    },
   });
   if (!order) return NextResponse.json({ error: 'Pedido não encontrado.' }, { status: 404 });
   // Só o dono do pedido (ou admin) pode ver detalhes
