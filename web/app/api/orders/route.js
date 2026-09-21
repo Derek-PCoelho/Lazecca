@@ -22,7 +22,7 @@ export async function GET(request) {
 
   const orders = await prisma.order.findMany({
     where: { userId: user.id },
-    include: { items: true, payment: true },
+    include: { items: { include: { product: { select: { slug: true, certificate: true, images: { take: 1, orderBy: { sortOrder: 'asc' } } } } } }, payment: true },
     orderBy: { createdAt: 'desc' },
   });
   return NextResponse.json({ orders });

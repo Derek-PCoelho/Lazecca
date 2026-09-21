@@ -315,6 +315,12 @@ model Order {
   paymentStatus   PaymentStatus @default(PENDING)
   status          OrderStatus  @default(AWAITING_PAYMENT)
 
+  // Bloco 1/8 — código de rastreio (preenchido pelo admin ao despachar) e
+  // motivo de cancelamento (preenchido no fluxo de cancelamento/reembolso)
+  trackingCode    String?
+  cancelReason    String?      @db.Text
+  cancelledAt     DateTime?
+
   payment         Payment?
 
   createdAt       DateTime     @default(now())
