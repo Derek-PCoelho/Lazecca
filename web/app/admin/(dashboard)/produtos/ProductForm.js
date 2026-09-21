@@ -60,7 +60,7 @@ export default function ProductForm({ value, onChange }) {
   return (
     <div style={{ display: 'grid', gap: 24 }}>
       {/* --- Identificação básica --- */}
-      <section>
+      <div>
         <h3 style={{ fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#7a1f2b', marginBottom: 12 }}>
           Identificação
         </h3>
@@ -86,10 +86,10 @@ export default function ProductForm({ value, onChange }) {
         <Field label="Contexto histórico" hint="Exibido na aba 'Contexto Histórico' da página do produto">
           <textarea rows={4} value={value.history || ''} onChange={set('history')} />
         </Field>
-      </section>
+      </div>
 
       {/* --- Preço e estoque --- */}
-      <section>
+      <div>
         <h3 style={{ fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#7a1f2b', marginBottom: 12 }}>
           Preço e estoque
         </h3>
@@ -117,10 +117,10 @@ export default function ProductForm({ value, onChange }) {
             Item de demonstração (isSample)
           </label>
         </div>
-      </section>
+      </div>
 
       {/* --- Ficha numismática --- */}
-      <section>
+      <div>
         <h3 style={{ fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#7a1f2b', marginBottom: 12 }}>
           Ficha numismática
         </h3>
@@ -157,10 +157,10 @@ export default function ProductForm({ value, onChange }) {
             <input value={value.variedade || ''} onChange={set('variedade')} />
           </Field>
         </div>
-      </section>
+      </div>
 
       {/* --- País e material --- */}
-      <section>
+      <div>
         <h3 style={{ fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#7a1f2b', marginBottom: 12 }}>
           País e material
         </h3>
@@ -183,10 +183,10 @@ export default function ProductForm({ value, onChange }) {
             <input value={value.diameter || ''} onChange={set('diameter')} />
           </Field>
         </div>
-      </section>
+      </div>
 
       {/* --- Estado de conservação --- */}
-      <section>
+      <div>
         <h3 style={{ fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#7a1f2b', marginBottom: 12 }}>
           Estado de conservação
         </h3>
@@ -220,10 +220,10 @@ export default function ProductForm({ value, onChange }) {
         <Field label="Raridade" hint='Ex.: "Regular", "Rara", "Muito Rara"'>
           <input value={value.rarity || ''} onChange={set('rarity')} />
         </Field>
-      </section>
+      </div>
 
       {/* --- Lote e selos --- */}
-      <section>
+      <div>
         <h3 style={{ fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#7a1f2b', marginBottom: 12 }}>
           Lote / sequência e selos
         </h3>
@@ -246,10 +246,10 @@ export default function ProductForm({ value, onChange }) {
             Selo &quot;Autenticada&quot;
           </label>
         </div>
-      </section>
+      </div>
 
       {/* --- Extras / envio --- */}
-      <section>
+      <div>
         <h3 style={{ fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#7a1f2b', marginBottom: 12 }}>
           Extras
         </h3>
@@ -262,7 +262,7 @@ export default function ProductForm({ value, onChange }) {
         <Field label="Observações do curador" hint="Exibido em destaque na aba 'Descrição'">
           <textarea rows={3} value={value.observacoes || ''} onChange={set('observacoes')} />
         </Field>
-      </section>
+      </div>
     </div>
   );
 }
