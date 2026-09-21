@@ -6,11 +6,13 @@ export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }) {
   const post = await getPostBySlug(params.slug);
-  if (!post) return { title: 'Artigo não encontrado · Lazecca Numismática' };
+  if (!post) return { title: 'Artigo não encontrado' };
   return {
-    title: `${post.title} · Diário Numismático`,
+    title: post.title,
     description: post.excerpt,
+    alternates: { canonical: `/diario/${post.slug}` },
     openGraph: {
+      type: 'article',
       title: post.title,
       description: post.excerpt,
       images: post.cover ? [`/${post.cover}`] : [],

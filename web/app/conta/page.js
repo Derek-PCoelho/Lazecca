@@ -2,7 +2,8 @@ import { Suspense } from 'react';
 import AccountClient from './AccountClient';
 
 export const metadata = {
-  title: 'Minha Conta · La Zecca Numismática',
+  title: 'Minha Conta',
+  robots: { index: false, follow: false },
 };
 
 export default function AccountPage() {

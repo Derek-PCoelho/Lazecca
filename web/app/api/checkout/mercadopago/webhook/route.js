@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getPaymentStatus, mapMpStatusToInternal, isConfigured } from '@/lib/mercadopago';
+import { getPaymentStatus, mapMpStatusToInternal, isConfigured, verifyWebhookSignature } from '@/lib/mercadopago';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,6 +11,11 @@ export const dynamic = 'force-dynamic';
 // webhook no painel do Mercado Pago para
 // https://lazecca.com.br/api/checkout/mercadopago/webhook, os pagamentos
 // passam a ser confirmados automaticamente aqui.
+//
+// Bloco 5 — Assim que MERCADOPAGO_WEBHOOK_SECRET também for configurado
+// (painel MP > Webhooks > Assinatura secreta), toda notificação recebida
+// tem sua assinatura HMAC validada antes de qualquer processamento, evitando
+// que terceiros forjem notificações de pagamento aprovado.
 export async function POST(request) {
   if (!isConfigured()) {
     return NextResponse.json({ ok: true, simulated: true });
@@ -20,6 +25,12 @@ export async function POST(request) {
     const body = await request.json();
     const paymentId = body?.data?.id || body?.id;
     if (!paymentId) return NextResponse.json({ ok: true });
+
+    const signatureCheck = verifyWebhookSignature(request, paymentId);
+    if (!signatureCheck.valid) {
+      console.warn('[webhook/mercadopago] assinatura inválida:', signatureCheck.reason);
+      return NextResponse.json({ ok: false, error: 'Assinatura inválida.' }, { status: 401 });
+    }
 
     const { status, rawResponse } = await getPaymentStatus(paymentId);
     const { paymentStatus, orderStatus } = mapMpStatusToInternal(status);

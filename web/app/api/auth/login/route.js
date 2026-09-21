@@ -1,11 +1,26 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyPassword, signSession, setSessionCookie } from '@/lib/auth';
+import { checkRateLimit, getClientIp } from '@/lib/rateLimit';
 
 export const dynamic = 'force-dynamic';
 
+// Bloco 5 — Rate limiting: no máximo 10 tentativas de login por IP a cada 15
+// minutos, para dificultar ataques de força bruta/credential stuffing.
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const LOGIN_MAX_ATTEMPTS = 10;
+
 export async function POST(request) {
   try {
+    const ip = getClientIp(request);
+    const rl = checkRateLimit(`login:${ip}`, { windowMs: LOGIN_WINDOW_MS, max: LOGIN_MAX_ATTEMPTS });
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: 'Muitas tentativas de login. Tente novamente em alguns minutos.' },
+        { status: 429, headers: { 'Retry-After': String(rl.retryAfterSeconds) } }
+      );
+    }
+
     const { email, password } = (await request.json()) || {};
     if (!email || !password) {
       return NextResponse.json({ error: 'Informe e-mail e senha.' }, { status: 400 });

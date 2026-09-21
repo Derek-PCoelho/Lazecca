@@ -2,13 +2,28 @@ import { NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { sendMail } from '@/lib/mail';
+import { checkRateLimit, getClientIp } from '@/lib/rateLimit';
 
 export const dynamic = 'force-dynamic';
 
 const TOKEN_TTL_MS = 60 * 60 * 1000; // 1 hora
 
+// Bloco 5 — Rate limiting: no máximo 5 pedidos de redefinição por IP a cada
+// hora, para evitar abuso do envio de e-mails (spam / enumeração de contas).
+const FORGOT_WINDOW_MS = 60 * 60 * 1000;
+const FORGOT_MAX_ATTEMPTS = 5;
+
 export async function POST(request) {
   try {
+    const ip = getClientIp(request);
+    const rl = checkRateLimit(`forgot-password:${ip}`, { windowMs: FORGOT_WINDOW_MS, max: FORGOT_MAX_ATTEMPTS });
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: 'Muitas solicitações. Tente novamente mais tarde.' },
+        { status: 429, headers: { 'Retry-After': String(rl.retryAfterSeconds) } }
+      );
+    }
+
     const { email } = (await request.json()) || {};
     if (!email) {
       return NextResponse.json({ error: 'Informe seu e-mail.' }, { status: 400 });
