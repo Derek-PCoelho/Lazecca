@@ -68,7 +68,15 @@
 /* Reset */
 *, *::before, *::after { box-sizing: border-box; }
 * { margin: 0; }
-html, body { height: 100%; }
+/* height:100% (em vez de min-height) no <html>/<body> quebra position:sticky
+   em navegadores mobile (Chrome/Safari Android/iOS): ao rolar a página, o
+   viewport visual muda de tamanho (barra de endereço recolhendo) e o motor
+   de layout recalcula erroneamente o "containing block" do sticky, fazendo
+   o .site-header (que tem position:sticky) parar de colar no topo e rolar
+   junto com o conteúdo — some o cabeçalho/hambúrguer ao descer a página.
+   min-height preserva o comportamento desejado (body nunca menor que a
+   viewport, útil p/ fundos/backgrounds) sem esse efeito colateral. */
+html, body { min-height: 100%; }
 body {
   font-family: var(--font-sans);
   font-size: 16px;
@@ -1201,10 +1209,6 @@ section.hero { padding: 0; }
       gap: 40px;
       padding: 48px 0 96px;
     }
-    @media (max-width: 900px) {
-      .catalog-layout { grid-template-columns: 1fr; gap: 24px; }
-      .catalog-sidebar { position: relative; top: 0; }
-    }
 
     .catalog-sidebar {
       position: sticky;
@@ -1216,6 +1220,77 @@ section.hero { padding: 0; }
     }
     .catalog-sidebar::-webkit-scrollbar { width: 4px; }
     .catalog-sidebar::-webkit-scrollbar-thumb { background: var(--line); }
+
+    /* Botão "Filtros" — só existe/aparece em mobile (ver media query abaixo),
+       abre/fecha o painel de filtros que em telas largas fica sempre visível
+       na sidebar fixa lateral. */
+    .catalog-filter-toggle { display: none; }
+
+    /* IMPORTANTE: este bloco @media precisa vir DEPOIS das regras base acima
+       (.catalog-layout / .catalog-sidebar) no arquivo. Com a mesma
+       especificidade de seletor, a ordem no código é o que decide o empate
+       em CSS — se este @media viesse antes (como estava anteriormente), a
+       regra base .catalog-sidebar (sticky + max-height + overflow-y:auto),
+       por vir depois, sempre venceria mesmo dentro do @media, e o reset
+       mobile nunca era aplicado (bug: filtros ficavam com a mesma caixa
+       "sticky" fixa de altura limitada da versão desktop, cortando/somendo
+       atrás dos produtos). */
+    @media (max-width: 900px) {
+      .catalog-layout { grid-template-columns: 1fr; gap: 24px; }
+
+      .catalog-filter-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        width: 100%;
+        padding: 14px 16px;
+        background: var(--paper-soft);
+        border: 1px solid var(--line);
+        border-radius: var(--radius-md);
+        font-family: var(--font-sans);
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--ink-800);
+      }
+      .catalog-filter-toggle .chip {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 20px;
+        height: 20px;
+        padding: 0 6px;
+        border-radius: 999px;
+        background: var(--burgundy-700);
+        color: var(--gold-500);
+        font-size: 11px;
+        font-weight: 700;
+      }
+      .catalog-filter-toggle svg { transition: transform 0.2s ease; }
+      .catalog-filter-toggle.is-open svg.chev { transform: rotate(180deg); }
+
+      /* Em mobile a sidebar deixa de ser sticky/limitada em altura (o que
+         causava o corte/sobreposição atrás dos produtos) e passa a ser um
+         painel normal no fluxo do documento, oculto por padrão e revelado
+         como um "acordeão" abaixo do botão Filtros. */
+      .catalog-sidebar {
+        position: relative;
+        top: 0;
+        max-height: none;
+        overflow-y: visible;
+        padding-right: 0;
+        display: none;
+        margin-top: 12px;
+        margin-bottom: 8px;
+        padding: 4px 16px 8px;
+        background: var(--paper-soft);
+        border: 1px solid var(--line);
+        border-radius: var(--radius-md);
+      }
+      .catalog-sidebar.is-open { display: block; }
+    }
 
     .filter-group {
       padding: 20px 0;
