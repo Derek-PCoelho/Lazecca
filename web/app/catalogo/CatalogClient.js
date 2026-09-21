@@ -35,6 +35,9 @@ export default function CatalogClient({ products, categories, filtros, priceRang
   const [tipoFilter, setTipoFilter] = useState('');
   const [perPage, setPerPage] = useState(24);
   const [page, setPage] = useState(1);
+  // Mobile: painel de filtros (.catalog-sidebar) fica oculto por padrão e é
+  // revelado por este botão (só existe/visível em telas <=900px via CSS).
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   useEffect(() => {
     setActiveCat(params.get('cat') || '');
@@ -108,6 +111,22 @@ export default function CatalogClient({ products, categories, filtros, priceRang
   const hasFilters =
     searchQuery || activeCat || priceMin || priceMax || denomFilter.size || yearFilter.size || stateFilter.size || estampaFilter.size || tipoFilter;
 
+  const activeFilterCount =
+    (activeCat ? 1 : 0) +
+    (priceMin ? 1 : 0) +
+    (priceMax ? 1 : 0) +
+    (tipoFilter ? 1 : 0) +
+    denomFilter.size +
+    yearFilter.size +
+    stateFilter.size +
+    estampaFilter.size;
+
+  // Fecha o painel de filtros mobile automaticamente ao trocar de categoria
+  // (evita o painel ficar aberto "por engano" cobrindo a lista já filtrada).
+  useEffect(() => {
+    setFiltersOpen(false);
+  }, [activeCat]);
+
   const pageNumbers = useMemo(() => {
     if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
     const arr = [1];
@@ -152,7 +171,27 @@ export default function CatalogClient({ products, categories, filtros, priceRang
 
       <div className="container">
         <div className="catalog-layout">
-          <aside className="catalog-sidebar">
+          {/* Botão "Filtros" — visível apenas em mobile (<=900px, ver CSS).
+              Em desktop a sidebar já fica sempre visível e este botão some. */}
+          <button
+            type="button"
+            className={`catalog-filter-toggle${filtersOpen ? ' is-open' : ''}`}
+            onClick={() => setFiltersOpen((v) => !v)}
+            aria-expanded={filtersOpen}
+            aria-controls="catalog-filters-panel"
+          >
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+              <Icon name="sliders" size={14} />
+              Filtros
+              {activeFilterCount > 0 && <span className="chip">{activeFilterCount}</span>}
+            </span>
+            <Icon name="chevron-down" size={16} className="chev" />
+          </button>
+
+          <aside
+            id="catalog-filters-panel"
+            className={`catalog-sidebar${filtersOpen ? ' is-open' : ''}`}
+          >
             <div className="filter-group" style={{ paddingTop: 32 }}>
               <h4>
                 <Icon name="sliders" size={14} style={{ verticalAlign: 'middle', marginRight: 6 }} /> Categoria
