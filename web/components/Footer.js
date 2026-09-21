@@ -38,14 +38,11 @@ export default function Footer() {
               apresentada pelo Dr. Sergio Costa e sua equipe de especialistas.
             </p>
             <div style={{ display: 'flex', gap: 12, marginTop: 18 }}>
-              <a href="#" style={{ color: 'var(--gold-500)' }} aria-label="Instagram">
-                <Icon name="instagram" size={22} />
-              </a>
-              <a href="#" style={{ color: 'var(--gold-500)' }} aria-label="Facebook">
-                <Icon name="facebook" size={22} />
-              </a>
-              <a href={CONTACT.whatsappHref} style={{ color: 'var(--gold-500)' }} aria-label="WhatsApp">
+              <a href={CONTACT.whatsappHref} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--gold-500)' }} aria-label="WhatsApp">
                 <Icon name="whatsapp" size={22} />
+              </a>
+              <a href={`mailto:${CONTACT.email}`} style={{ color: 'var(--gold-500)' }} aria-label="E-mail">
+                <Icon name="mail" size={22} />
               </a>
             </div>
           </div>
@@ -99,14 +96,18 @@ export default function Footer() {
                 </a>
               </li>
               <li>
-                <a href="#">
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(CONTACT.addressFull)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   <Icon name="map-pin" size={14} /> {CONTACT.address} · Fortaleza/CE
                 </a>
               </li>
               <li>
-                <a href="#">
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                   <Icon name="clock" size={14} /> {CONTACT.hours}
-                </a>
+                </span>
               </li>
             </ul>
           </div>

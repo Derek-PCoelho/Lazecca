@@ -21,8 +21,10 @@ export default function CatalogClient({ products, categories, filtros, priceRang
 
   const params = useSearchParams();
   const initialCat = params.get('cat') || '';
+  const initialQuery = params.get('q') || '';
 
   const [activeCat, setActiveCat] = useState(initialCat);
+  const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [priceMin, setPriceMin] = useState('');
   const [priceMax, setPriceMax] = useState('');
   const [sort, setSort] = useState('featured');
@@ -36,6 +38,7 @@ export default function CatalogClient({ products, categories, filtros, priceRang
 
   useEffect(() => {
     setActiveCat(params.get('cat') || '');
+    setSearchQuery(params.get('q') || '');
   }, [params]);
 
   const toggle = (setter) => (val) =>
@@ -48,6 +51,14 @@ export default function CatalogClient({ products, categories, filtros, priceRang
 
   const filtered = useMemo(() => {
     let list = [...products];
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      list = list.filter((p) =>
+        [p.name, p.denomination, p.country, p.categoryName, p.padrao, p.figura, String(p.year || '')]
+          .filter(Boolean)
+          .some((field) => String(field).toLowerCase().includes(q))
+      );
+    }
     if (activeCat) {
       if (activeCat === 'raridades') list = list.filter((p) => p.seals && p.seals.includes('rare'));
       else list = list.filter((p) => p.category === activeCat);
@@ -68,11 +79,11 @@ export default function CatalogClient({ products, categories, filtros, priceRang
     if (sort === 'year-desc') list.sort((a, b) => b.year - a.year);
     if (sort === 'state') list.sort((a, b) => (a.state || '').localeCompare(b.state || ''));
     return list;
-  }, [products, activeCat, denomFilter, yearFilter, stateFilter, estampaFilter, tipoFilter, priceMin, priceMax, sort]);
+  }, [products, searchQuery, activeCat, denomFilter, yearFilter, stateFilter, estampaFilter, tipoFilter, priceMin, priceMax, sort]);
 
   useEffect(() => {
     setPage(1);
-  }, [activeCat, denomFilter, yearFilter, stateFilter, estampaFilter, tipoFilter, priceMin, priceMax, sort, perPage]);
+  }, [searchQuery, activeCat, denomFilter, yearFilter, stateFilter, estampaFilter, tipoFilter, priceMin, priceMax, sort, perPage]);
 
   const totalPages = perPage === Infinity ? 1 : Math.max(1, Math.ceil(filtered.length / perPage));
   const safePage = Math.min(page, totalPages);
@@ -84,6 +95,7 @@ export default function CatalogClient({ products, categories, filtros, priceRang
 
   const clearAll = () => {
     setActiveCat('');
+    setSearchQuery('');
     setPriceMin('');
     setPriceMax('');
     setDenomFilter(new Set());
@@ -94,7 +106,7 @@ export default function CatalogClient({ products, categories, filtros, priceRang
   };
 
   const hasFilters =
-    activeCat || priceMin || priceMax || denomFilter.size || yearFilter.size || stateFilter.size || estampaFilter.size || tipoFilter;
+    searchQuery || activeCat || priceMin || priceMax || denomFilter.size || yearFilter.size || stateFilter.size || estampaFilter.size || tipoFilter;
 
   const pageNumbers = useMemo(() => {
     if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
@@ -125,14 +137,15 @@ export default function CatalogClient({ products, categories, filtros, priceRang
               </>
             )}
           </div>
-          <h1 className="h1">{activeName}</h1>
+          <h1 className="h1">{searchQuery ? `Resultados para "${searchQuery}"` : activeName}</h1>
           <p className="lede">
-            {activeCat === 'raridades' &&
+            {searchQuery && `${filtered.length} peça(s) encontrada(s) para sua busca.`}
+            {!searchQuery && activeCat === 'raridades' &&
               'Peças excepcionais reservadas para colecionadores exigentes. Cada exemplar é único em nosso acervo.'}
-            {activeCat === 'cedulas-br' &&
+            {!searchQuery && activeCat === 'cedulas-br' &&
               'Cédulas brasileiras do padrão Cruzeiro (1942-1967), autenticadas e catalogadas peça a peça pelo Dr. Sergio Costa.'}
-            {!activeCat && `Todo o acervo curado pela La Zecca — ${products.length} peças autenticadas. Filtre por denominação, ano, estado ou período.`}
-            {activeCat && !['raridades', 'cedulas-br'].includes(activeCat) && `Peças da categoria ${activeName.toLowerCase()}, autenticadas e catalogadas.`}
+            {!searchQuery && !activeCat && `Todo o acervo curado pela La Zecca — ${products.length} peças autenticadas. Filtre por denominação, ano, estado ou período.`}
+            {!searchQuery && activeCat && !['raridades', 'cedulas-br'].includes(activeCat) && `Peças da categoria ${activeName.toLowerCase()}, autenticadas e catalogadas.`}
           </p>
         </div>
       </section>
@@ -332,6 +345,14 @@ export default function CatalogClient({ products, categories, filtros, priceRang
 
             {hasFilters && (
               <div className="active-filters">
+                {searchQuery && (
+                  <span className="filter-chip">
+                    Busca: &quot;{searchQuery}&quot;
+                    <span className="remove" onClick={() => setSearchQuery('')}>
+                      <Icon name="x" size={12} />
+                    </span>
+                  </span>
+                )}
                 {activeCat && (
                   <span className="filter-chip">
                     {activeName}

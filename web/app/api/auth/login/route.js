@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyPassword, signSession, setSessionCookie } from '@/lib/auth';
-import { mergeGuestCartIntoUser } from '@/lib/cartServer';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(request) {
   try {
@@ -22,7 +23,6 @@ export async function POST(request) {
 
     const token = signSession(user);
     await setSessionCookie(token);
-    await mergeGuestCartIntoUser(user.id);
 
     return NextResponse.json({
       user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName, role: user.role },

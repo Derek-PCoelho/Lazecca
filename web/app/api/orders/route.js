@@ -6,6 +6,8 @@ import { calculateShippingOptions } from '@/lib/shipping';
 import { createPixPayment, createCardPayment, createBoletoPayment } from '@/lib/mercadopago';
 import { sendOrderConfirmationEmail } from '@/lib/mail';
 
+export const dynamic = 'force-dynamic';
+
 const PIX_DISCOUNT_RATE = 0.05;
 
 function generateOrderNumber() {
@@ -31,12 +33,16 @@ export async function POST(request) {
     const body = await request.json();
     const { customer, address, shippingMethod, paymentMethod, cardToken, installments } = body || {};
 
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: 'É necessário estar logado para finalizar a compra.' }, { status: 401 });
+    }
+
     if (!customer?.name || !customer?.email || !address?.zipCode) {
       return NextResponse.json({ error: 'Dados de identificação/entrega incompletos.' }, { status: 400 });
     }
 
-    const user = await getCurrentUser();
-    const { cart } = await getOrCreateActiveCart({ createGuestIfMissing: false });
+    const { cart } = await getOrCreateActiveCart();
 
     if (!cart) {
       return NextResponse.json({ error: 'Carrinho vazio.' }, { status: 400 });

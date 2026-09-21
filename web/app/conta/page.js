@@ -39,6 +39,24 @@ export default function AccountPage() {
   const [signupForm, setSignupForm] = useState({
     firstName: '', lastName: '', email: '', cpf: '', phone: '', password: '', wantsNewsletter: true,
   });
+  const [forgotSent, setForgotSent] = useState(false);
+
+  const handleForgotPassword = async () => {
+    if (!loginForm.email) {
+      setError('Digite seu e-mail no campo acima antes de clicar em "Esqueci minha senha".');
+      return;
+    }
+    try {
+      await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: loginForm.email }),
+      });
+      setForgotSent(true);
+    } catch {
+      setError('Erro de conexão. Tente novamente.');
+    }
+  };
 
   const loadMe = async () => {
     try {
@@ -275,7 +293,14 @@ export default function AccountPage() {
                         onChange={(e) => setLoginForm((f) => ({ ...f, password: e.target.value }))}
                       />
                     </div>
-                    <div className="auth-forgot"><a href="#">Esqueci minha senha</a></div>
+                    <div className="auth-forgot">
+                      <a
+                        href="#"
+                        onClick={(e) => { e.preventDefault(); handleForgotPassword(); }}
+                      >
+                        {forgotSent ? 'Link enviado! Verifique seu e-mail.' : 'Esqueci minha senha'}
+                      </a>
+                    </div>
                     <button className="btn btn-primary btn-lg btn-block" type="submit" disabled={submitting}>
                       {submitting ? 'Entrando...' : 'Entrar'}
                     </button>

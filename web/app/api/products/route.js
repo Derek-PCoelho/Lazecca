@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getVisibleProducts, getCategories, getFiltros } from '@/lib/data';
 
+export const dynamic = 'force-dynamic';
+
 // Retorna todo o catálogo visível + categorias + filtros calculados, num único
 // payload — consumido por app/catalogo/CatalogClient.js e app/page.js no
 // carregamento inicial (client components não podem chamar Prisma direto).

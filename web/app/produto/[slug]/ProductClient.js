@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import Header from '@/components/Header';
@@ -9,6 +10,7 @@ import Icon from '@/components/Icon';
 import ProductCard from '@/components/ProductCard';
 import { formatPrice } from '@/lib/data';
 import { addToCart } from '@/lib/cart';
+import { isFavorite, toggleFavorite } from '@/lib/favorites';
 import { PIX_DISCOUNT_RATE, INSTALLMENTS_MAX } from '@/lib/config';
 
 // Recriado literalmente de design_files/product.html
@@ -18,10 +20,19 @@ import { PIX_DISCOUNT_RATE, INSTALLMENTS_MAX } from '@/lib/config';
 //   placeholder honesto até chegarem as fotos reais tiradas na loja.
 // Melhoria 13: qty selector e botão de compra respeitam o campo `stock`.
 export default function ProductClient({ product, related }) {
+  const router = useRouter();
   const [qty, setQty] = useState(1);
   const [tab, setTab] = useState('description');
   const [activeImage, setActiveImage] = useState(0);
   const [stockMsg, setStockMsg] = useState('');
+  const [fav, setFav] = useState(false);
+  const [favLoading, setFavLoading] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    isFavorite(product.dbId).then((v) => mounted && setFav(v));
+    return () => { mounted = false; };
+  }, [product.dbId]);
 
   const isCedula = product.category === 'cedulas-br' || product.category === 'cedulas-int';
   const parcela = product.price / INSTALLMENTS_MAX;
@@ -35,10 +46,25 @@ export default function ProductClient({ product, related }) {
     if (!result.ok) {
       if (result.reason === 'out-of-stock') {
         setStockMsg(`Só temos ${result.available} unidade(s) desta peça em estoque.`);
+      } else if (result.reason === 'auth-required') {
+        router.push(`/conta?redirect=${encodeURIComponent('/produto/' + product.slug)}`);
       }
       return;
     }
     window.location.href = '/carrinho';
+  };
+
+  const handleToggleFav = async () => {
+    setFavLoading(true);
+    const result = await toggleFavorite(product.dbId, fav);
+    setFavLoading(false);
+    if (!result.ok) {
+      if (result.reason === 'auth-required') {
+        router.push(`/conta?redirect=${encodeURIComponent('/produto/' + product.slug)}`);
+      }
+      return;
+    }
+    setFav(result.favorited);
   };
 
   return (
@@ -155,8 +181,14 @@ export default function ProductClient({ product, related }) {
                     </button>
                   </>
                 )}
-                <button className="btn btn-ghost btn-lg" title="Favoritar">
-                  <Icon name="heart" size={18} />
+                <button
+                  className="btn btn-ghost btn-lg"
+                  title={fav ? 'Remover dos favoritos' : 'Favoritar'}
+                  onClick={handleToggleFav}
+                  disabled={favLoading}
+                  style={fav ? { color: 'var(--burgundy-700)' } : undefined}
+                >
+                  <Icon name="heart" size={18} style={fav ? { fill: 'currentColor' } : undefined} />
                 </button>
               </div>
               {stockMsg && <p style={{ color: 'var(--danger)', fontSize: 13, marginTop: -20, marginBottom: 20 }}>{stockMsg}</p>}
