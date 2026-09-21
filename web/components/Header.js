@@ -88,16 +88,19 @@ export default function Header({ page = 'home' }) {
     <header className="site-header">
       <div className="header-top">
         <div className="container header-top-inner">
-          <span>Curadoria numismática · desde 1998</span>
-          <span>
-            <Link href="/autenticidade">Autenticidade garantida</Link>
-            <span className="divider"></span>
+          <span className="header-top-tagline">Curadoria numismática · desde 1998</span>
+          <span className="header-top-links">
+            <Link href="/autenticidade" className="header-top-auth">Autenticidade garantida</Link>
+            <span className="divider header-top-divider"></span>
             {/* Correção (auditoria pós-lançamento): este botão de telefone no topo
                 abria o discador do celular em vez do WhatsApp da loja. Trocado para
                 whatsappHref — mesmo padrão já usado no rodapé/página de contato. */}
-            <a href={CONTACT.whatsappHref} target="_blank" rel="noopener noreferrer">{CONTACT.phoneDisplay}</a>
-            <span className="divider"></span>
-            <Link href="/conta">Minha Conta</Link>
+            <a href={CONTACT.whatsappHref} target="_blank" rel="noopener noreferrer" className="header-top-phone">
+              <Icon name="phone" size={12} className="header-top-phone-icon" />
+              {CONTACT.phoneDisplay}
+            </a>
+            <span className="divider header-top-divider header-top-divider-account"></span>
+            <Link href="/conta" className="header-top-account">Minha Conta</Link>
           </span>
         </div>
       </div>

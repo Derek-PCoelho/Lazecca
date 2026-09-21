@@ -426,6 +426,39 @@ h1, h2, h3, h4 {
 }
 
 @media (max-width: 900px) {
+  /* Faixa superior (.header-top) — em telas largas mostra tagline + 3 links
+     separados por divisores numa única linha; em mobile isso não cabe e
+     quebrava de forma feia (texto espremido em 2-3 linhas). A solução:
+     reduzir para o item mais essencial (telefone/WhatsApp, com ícone, numa
+     única linha compacta e centralizada) e esconder o restante — a tagline
+     é redundante com o h1 da página, "Autenticidade" já está no menu
+     hambúrguer (.nav-drawer-list) e "Minha Conta" já está no rodapé do
+     drawer (.nav-drawer-foot), então nada de navegação é perdido. */
+  .header-top-inner {
+    justify-content: center;
+    padding: 6px 0;
+    min-height: auto;
+  }
+  .header-top-tagline,
+  .header-top-auth,
+  .header-top-account,
+  .header-top-divider {
+    display: none;
+  }
+  .header-top-links {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+  }
+  .header-top-phone {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .header-top-phone-icon { flex-shrink: 0; }
+
   .header-main { grid-template-columns: auto auto; gap: 16px; }
   .header-search { grid-column: 1 / -1; order: 3; max-width: none; }
   .header-actions { justify-self: end; }
@@ -3135,6 +3168,24 @@ section.hero { padding: 0; }
     }
     .whatsapp-card h4 { font-family: var(--font-display); font-size: 20px; margin-bottom: 4px; }
     .whatsapp-card p { font-size: 13px; opacity: 0.9; }
+    /* Em telas estreitas o layout de 3 colunas (ícone | texto | botão) numa
+       única linha forçava o texto a quebrar de forma apertada ao lado do
+       ícone, com o botão "Conversar" sem respiro. Reorganizamos em duas
+       linhas: ícone + título/texto lado a lado no topo, e o botão abaixo
+       ocupando a largura total do card, com espaçamento consistente. */
+    @media (max-width: 620px) {
+      .whatsapp-card {
+        flex-wrap: wrap;
+        gap: 14px;
+        padding: 20px;
+      }
+      .whatsapp-card .wa-icon { width: 48px; height: 48px; }
+      .whatsapp-card > a.btn {
+        width: 100%;
+        justify-content: center;
+        text-align: center;
+      }
+    }
 
     .contact-form-card {
       background: var(--paper-soft);
@@ -3180,24 +3231,33 @@ section.hero { padding: 0; }
     }
     /* Mapa real (Google Maps embed) — substitui o placeholder decorativo */
     .map-block-real { background-image: none; }
+    /* Correção (responsividade mobile): o link "Abrir no Google Maps" antes
+       ficava com position:absolute por cima do canto do mapa — em telas
+       estreitas isso fazia com que ele cobrisse parte do conteúdo do mapa
+       (pino, ruas, e a própria barra de atribuição do Google no rodapé do
+       iframe). Agora ele é renderizado como um elemento normal LOGO ABAIXO
+       do quadro do mapa (ver JSX: irmão de .map-block-real, não mais filho
+       absoluto dentro dele), então nunca mais sobrepõe o mapa em nenhuma
+       largura de tela. */
     .map-open-link {
-      position: absolute;
-      bottom: 12px;
-      right: 12px;
-      z-index: 2;
       display: inline-flex;
       align-items: center;
       gap: 6px;
+      margin-top: 14px;
       background: var(--paper-soft);
+      border: 1px solid var(--line-soft);
       color: var(--burgundy-700);
       font-size: 12px;
       font-weight: 600;
       padding: 8px 14px;
       border-radius: var(--radius);
-      box-shadow: var(--shadow-md);
+      box-shadow: var(--shadow-sm, var(--shadow-md));
       text-decoration: none;
     }
     .map-open-link:hover { background: var(--gold-100); }
+    @media (max-width: 620px) {
+      .map-open-link { width: 100%; justify-content: center; }
+    }
 
     /* Página "Como Chegar" — mapa + endereço lado a lado no desktop,
        empilhados em telas estreitas. */

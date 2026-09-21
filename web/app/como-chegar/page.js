@@ -104,20 +104,24 @@ export default function ComoChegarPage() {
               >
                 <iframe
                   title="Localização da La Zecca Numismática no Google Maps"
-                  src={`https://maps.google.com/maps?q=${encodeURIComponent(CONTACT.addressFull)}&z=17&output=embed`}
+                  src={`https://maps.google.com/maps?q=${CONTACT.lat},${CONTACT.lng}&z=16&output=embed`}
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
                   style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 0 }}
                 />
-                <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(CONTACT.addressFull)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="map-open-link"
-                >
-                  <Icon name="map-pin" size={14} /> Abrir no Google Maps
-                </a>
               </div>
+              {/* Correção: o link "Abrir no Google Maps" era um botão flutuante
+                  (position:absolute) por cima do mapa, cobrindo parte do
+                  conteúdo em telas estreitas. Agora fica logo abaixo do quadro
+                  do mapa, sem sobrepor nada. */}
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(CONTACT.addressFull)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="map-open-link"
+              >
+                <Icon name="map-pin" size={14} /> Abrir no Google Maps
+              </a>
               <a
                 href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(CONTACT.addressFull)}`}
                 target="_blank"

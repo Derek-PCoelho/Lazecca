@@ -14,6 +14,13 @@ export const CONTACT = {
   addressFull: 'R. do Pocinho, 33 · Sala 425 · Centro · Fortaleza/CE · CEP 60055-120',
   city: 'Centro · Fortaleza/CE',
   hours: 'Seg à Sex · 09h às 16h',
+  // Coordenadas exatas da loja (obtidas via geocodificação Nominatim/OpenStreetMap
+  // a partir do endereço completo). Usadas no embed do Google Maps em vez da busca
+  // por texto (`q=<endereço>`), que não garantia o pino centralizado no quadro —
+  // com lat/lng explícitos + parâmetro `ll` o Google Maps sempre centraliza o
+  // pino exatamente no meio do iframe, independente do tamanho da tela.
+  lat: -3.7279566,
+  lng: -38.5254365,
 };
 
 // Melhoria 6 — Frete funcional por transportadora.
