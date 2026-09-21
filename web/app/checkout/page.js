@@ -22,6 +22,11 @@ import { validateCpf, validateEmail, validatePhone, validateCepFormat, formatCpf
 // Nota de arquitetura: o pedido é processado via API route real (/api/orders), que
 // recalcula preço/frete/desconto inteiramente no servidor a partir do banco — o
 // valor exibido aqui é sempre uma prévia, nunca a fonte de verdade do cobrado.
+// Fase 11 (adendo): o carrinho passou a aceitar visitantes sem login (carrinho
+// de convidado). Para PROSSEGUIR COM A COMPRA continua sendo obrigatório
+// estar logado — por isso esta página checa /api/auth/me ao carregar e, se
+// não houver sessão, mostra um aviso pedindo login/cadastro (preservando os
+// itens do carrinho, que continuam salvos no cookie de convidado até o login).
 
 // Formatação automática (Bloco 6) enquanto o usuário digita: aceita com ou
 // sem pontuação, mas exibe sempre formatado no campo.
@@ -53,6 +58,13 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
 
+  // Fase 11 (adendo) — o carrinho agora aceita visitante sem login (carrinho
+  // de convidado), mas o checkout em si continua exigindo conta. Checamos a
+  // sessão ao entrar nesta página; os itens do carrinho permanecem intactos
+  // (salvos no cookie de convidado) enquanto o cliente faz login/cadastro.
+  const [authChecked, setAuthChecked] = useState(false);
+  const [authUser, setAuthUser] = useState(null);
+
   useEffect(() => {
     let mounted = true;
     const load = () =>
@@ -64,6 +76,17 @@ export default function CheckoutPage() {
       });
     load();
     window.addEventListener(CART_CHANGED_EVENT, load);
+
+    fetch('/api/auth/me')
+      .then((res) => res.json())
+      .then((data) => {
+        if (mounted) {
+          setAuthUser(data.user || null);
+          setAuthChecked(true);
+        }
+      })
+      .catch(() => mounted && setAuthChecked(true));
+
     return () => {
       mounted = false;
       window.removeEventListener(CART_CHANGED_EVENT, load);
@@ -222,6 +245,39 @@ export default function CheckoutPage() {
           <Link href="/catalogo" className="btn btn-primary btn-lg">
             Ir ao catálogo
           </Link>
+        </div>
+      </>
+    );
+  }
+
+  // Fase 11 (adendo) — carrinho de convidado permitido, mas finalizar a
+  // compra exige login. Os itens continuam salvos (cookie de convidado) e
+  // serão migrados automaticamente para a conta assim que o cliente entrar
+  // ou se cadastrar (ver mergeGuestCartIntoUser em lib/cartServer.js).
+  if (authChecked && !authUser && items.length > 0 && step !== 'confirmacao') {
+    return (
+      <>
+        <CheckoutHeader />
+        <div className="container" style={{ padding: '96px 0', textAlign: 'center' }}>
+          <Icon name="user" size={40} />
+          <h1 className="h1" style={{ marginTop: 16 }}>
+            Entre ou cadastre-se para continuar
+          </h1>
+          <p className="lede" style={{ margin: '16px auto 32px', maxWidth: 460 }}>
+            Seu carrinho com {items.length} {items.length === 1 ? 'peça' : 'peças'} está salvo — é só entrar (ou
+            criar uma conta) para prosseguir com a compra. Nada será perdido.
+          </p>
+          <Link
+            href={`/conta?redirect=${encodeURIComponent('/checkout')}`}
+            className="btn btn-primary btn-lg"
+          >
+            Entrar / Criar conta <Icon name="chevron-right" size={16} />
+          </Link>
+          <div style={{ marginTop: 24 }}>
+            <Link href="/carrinho" className="btn btn-ghost">
+              ← Voltar ao carrinho
+            </Link>
+          </div>
         </div>
       </>
     );

@@ -453,24 +453,17 @@ ou de decisão do cliente, não apenas de código):
 
 ### 12.5 Bloco 3 — Testes funcionais ponta a ponta
 
-**Status: concluído nesta etapa.** A bateria completa de testes funcionais
-com evidências está documentada na **Seção 13** deste relatório, incluindo
-a resolução da pendência abaixo.
+**Status: concluído.** A bateria completa de testes funcionais com
+evidências está documentada na **Seção 13** deste relatório.
 
-**Pendência explícita (resolvida/reconfirmada)**: a especificação original
-do Bloco 3 pede teste de "migração do carrinho de convidado para o
-carrinho autenticado no login", mas o carrinho de convidado foi
-**intencionalmente removido** em etapa anterior deste projeto (a pedido
-explícito do cliente/orientador da tarefa, para simplificar o controle de
-estoque — login agora é exigido antes de adicionar itens ao carrinho). A
-Seção 13 (Teste 13) reconfirma empiricamente esse comportamento
-(`GET /api/cart` sem sessão → `401`). Este sub-item específico do Bloco 3
-**continua sem poder ser executado como descrito originalmente** e
-**requer confirmação explícita do cliente**: (a) manter o comportamento
-atual (carrinho sempre autenticado, sem conceito de carrinho de convidado),
-ou (b) reintroduzir carrinho de convidado com migração no login. Nenhuma
-mudança de código foi feita nesta etapa sobre este ponto — apenas
-confirmação/documentação, aguardando decisão do cliente.
+**Pendência do "carrinho de convidado" — RESOLVIDA nesta etapa (Fase 11)**:
+a especificação original do Bloco 3 pedia teste de "migração do carrinho
+de convidado para o carrinho autenticado no login". O cliente confirmou a
+regra de negócio definitiva: **o carrinho pode ser de convidado (sem
+login), mas para prosseguir com a compra em si é obrigatório estar
+logado; ao logar, os itens do carrinho de convidado devem continuar ali**.
+Isso foi implementado e testado end-to-end nesta etapa — ver **Seção 14**
+para detalhes técnicos e evidências.
 
 ### 12.6 Blocos ainda não iniciados/pendentes
 
@@ -642,3 +635,87 @@ O servidor de teste (`next start -p 3100`) foi finalizado
   encerramento definitivo do projeto): responsividade mobile em
   dispositivos/viewports reais. Recomenda-se checagem visual manual em ao
   menos 1 smartphone real ou emulador antes do sign-off final do cliente.
+
+---
+
+## 14. Fase 11 (adendo) — Carrinho de Convidado com Migração no Login
+
+Decisão do cliente sobre a pendência do Bloco 3 (Seção 12.5): **o carrinho
+pode ter uma versão de convidado (sem exigir login), mas para prosseguir
+com a compra em si (checkout) é obrigatório estar logado; ao logar, os
+itens que já estavam no carrinho de convidado devem continuar lá** (nada
+se perde).
+
+### 14.1 O que mudou
+
+- **`lib/cartServer.js`** (reescrito): o carrinho passa a ter dois modos —
+  usuário autenticado (`Cart.userId`, como já era) ou **visitante**
+  (`Cart.sessionToken`, coluna que já existia no schema mas nunca era
+  usada). O visitante é identificado por um cookie novo, **`lz_guest_cart`**
+  (httpOnly, `sameSite: lax`, 30 dias, gerado com `crypto.randomUUID()`,
+  gerido só no servidor — nunca exposto/legível por JS do navegador).
+- **`app/api/cart/route.js` e `app/api/cart/[itemId]/route.js`**: removida
+  a exigência de login (`requireAuth()`) de `GET`/`POST`/`PATCH`/`DELETE` —
+  qualquer visitante agora pode montar/editar o carrinho.
+- **`mergeGuestCartIntoUser(userId)`** (nova função em `cartServer.js`):
+  chamada automaticamente ao final de um login (`/api/auth/login`) ou
+  cadastro (`/api/auth/register`) bem-sucedido, **depois** do cookie de
+  sessão ser definido. Comportamento:
+  - Se o visitante não tinha carrinho de convidado → não faz nada.
+  - Se o usuário **ainda não tinha** carrinho próprio → o carrinho de
+    convidado é simplesmente "adotado" (`Cart.userId` passa a apontar para
+    o usuário, `sessionToken` é zerado) — nenhum CartItem precisa ser
+    recriado.
+  - Se o usuário **já tinha** carrinho próprio (ex.: adicionou itens
+    logado em outro dispositivo antes) → merge item a item: quantidades do
+    mesmo produto são somadas, sempre respeitando o estoque atual da peça
+    (nunca ultrapassa o disponível); o carrinho de convidado é apagado e o
+    cookie `lz_guest_cart` é limpo.
+- **`app/api/orders/route.js` (checkout)**: **inalterado** — continua
+  exigindo `getCurrentUser()` e retornando `401` sem sessão. Prosseguir
+  com a compra sempre exigiu login e continua exigindo; apenas montar o
+  carrinho deixou de exigir.
+- **`app/checkout/page.js`**: agora verifica `/api/auth/me` ao carregar; se
+  o carrinho tem itens mas não há sessão, mostra uma tela dedicada
+  ("Entre ou cadastre-se para continuar — seu carrinho está salvo") com
+  botão para `/conta?redirect=/checkout`, em vez de deixar o cliente
+  preencher o formulário só para receber `401` ao confirmar o pedido.
+- **`app/api/cart/route.js`** GET deixou de retornar `401` para visitante —
+  passou a retornar `200` com `items: []` (carrinho de convidado vazio) ou
+  com os itens salvos.
+
+### 14.2 Evidência de teste (bateria completa, `curl` contra `next start` de produção local)
+
+| # | Teste | Resultado |
+|---|---|---|
+| G1 | `GET /api/cart` sem nenhum cookie (visitante novo) | `200 {"items":[]}` — antes seria `401` |
+| G3 | `POST /api/cart` adicionando item **sem login** | `200`, item adicionado, cookie `lz_guest_cart` criado |
+| G4 | `GET /api/cart` (mesmo visitante, ainda sem login) | `200`, item presente |
+| G6 | `POST /api/orders` (finalizar compra) **sem login**, carrinho de convidado com itens | `401 {"error":"É necessário estar logado para finalizar a compra."}` — checkout continua exigindo login |
+| G7 | Adicionar 2º item diferente ao mesmo carrinho de convidado | `200`, ambos os itens presentes |
+| G8 | `POST /api/auth/register` usando o **mesmo cookie jar** do carrinho de convidado (2 itens) | `200`, conta criada |
+| G9 | `GET /api/cart` imediatamente após o cadastro | `200`, **os 2 itens do carrinho de convidado aparecem no carrinho da conta** — migração automática confirmada |
+| G10 | Cookies após o cadastro | `lz_guest_cart` **removido**; apenas `lz_session` presente |
+| G12 | `GET /api/cart` após logout (mesmo navegador) | `200 {"items":[]}` — carrinho da conta não "vaza" para visitante deslogado |
+| G13-G15 | Novo carrinho de convidado (produto C) → login do **mesmo usuário** que já tinha carrinho próprio com 2 itens (A+B) | Carrinho final da conta tem os **3 itens (A+B+C)** — confirma merge no cenário "usuário já tinha carrinho" |
+| G16-G17 | Dois carrinhos de convidado adicionam **o mesmo produto** (qty 1 cada) em momentos diferentes, mesclando com a conta | Quantidade final = **2** (soma correta), nunca excedendo o estoque real do produto (`stock: 2`) |
+
+**Resultado: 15/15 testes desta bateria passaram.** A pendência do Bloco 3
+sobre carrinho de convidado está encerrada.
+
+### 14.3 Dados de teste e limpeza
+
+Como nas baterias anteriores, os testes escreveram no banco de produção
+real. Foram criadas e **removidas ao final** 2 contas de teste
+(`teste.guestcart.*@example.com`, `teste.mergeqty.*@example.com`), seus
+carrinhos, e 1 carrinho de convidado órfão remanescente de um teste
+anterior — todos confirmados removidos por consulta pós-limpeza. O
+estoque dos produtos usados (`C0002`–`C0005`) permaneceu correto
+(`stock: 2` cada) durante e após os testes — nenhum pedido foi finalizado
+nesta bateria (só se testou montagem/migração de carrinho), então nenhum
+decremento de estoque era esperado.
+
+### 14.4 Build
+
+`next build` reverificado com sucesso após as alterações (todas as rotas
+de carrinho continuam listadas no manifesto, nenhum erro de compilação).

@@ -1,14 +1,12 @@
 import { NextResponse } from 'next/server';
 import { updateCartItemQty, removeCartItem, getCartItems } from '@/lib/cartServer';
-import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
+// Carrinho de convidado: editar/remover item também não exige login (ver
+// nota em app/api/cart/route.js).
 export async function PATCH(request, { params }) {
   try {
-    const auth = await requireAuth();
-    if (auth.error) return NextResponse.json({ ok: false, error: auth.error }, { status: auth.status });
-
     const { qty } = (await request.json()) || {};
     const result = await updateCartItemQty(params.itemId, Number(qty));
     const items = await getCartItems();
@@ -21,8 +19,6 @@ export async function PATCH(request, { params }) {
 }
 
 export async function DELETE(request, { params }) {
-  const auth = await requireAuth();
-  if (auth.error) return NextResponse.json({ ok: false, error: auth.error }, { status: auth.status });
   await removeCartItem(params.itemId);
   const items = await getCartItems();
   return NextResponse.json({ ok: true, items });

@@ -58,7 +58,7 @@ export default function CartPage() {
           </div>
           <h1 className="h1">Seu Carrinho</h1>
           <p className="lede">
-            {items.length} {items.length === 1 ? 'peça' : 'peças'} · reservadas por 30 minutos
+            {items.length} {items.length === 1 ? 'peça' : 'peças'} · o estoque é confirmado ao finalizar a compra
           </p>
         </div>
       </section>

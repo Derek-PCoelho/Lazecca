@@ -1,28 +1,24 @@
 import { NextResponse } from 'next/server';
 import { getCartItems, addToCart, clearCart } from '@/lib/cartServer';
-import { requireAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
-// Carrinho exige login (loja virtual de verdade — sem carrinho de convidado).
+// Carrinho de convidado (a pedido do cliente): visitante sem login pode
+// montar o carrinho normalmente. Login só é exigido para PROSSEGUIR COM A
+// COMPRA (ver POST /api/orders) — não para ver/editar o carrinho.
 export async function GET() {
-  const auth = await requireAuth();
-  if (auth.error) return NextResponse.json({ items: [], error: auth.error }, { status: auth.status });
   const items = await getCartItems();
   return NextResponse.json({ items });
 }
 
 export async function POST(request) {
   try {
-    const auth = await requireAuth();
-    if (auth.error) return NextResponse.json({ ok: false, reason: 'auth-required', error: auth.error }, { status: auth.status });
-
     const { productId, qty } = (await request.json()) || {};
     if (!productId) {
       return NextResponse.json({ ok: false, reason: 'missing-product' }, { status: 400 });
     }
     const result = await addToCart(productId, qty || 1);
-    if (!result.ok) return NextResponse.json(result, { status: result.reason === 'auth-required' ? 401 : 409 });
+    if (!result.ok) return NextResponse.json(result, { status: 409 });
     const items = await getCartItems();
     return NextResponse.json({ ...result, items });
   } catch (err) {
@@ -32,8 +28,6 @@ export async function POST(request) {
 }
 
 export async function DELETE() {
-  const auth = await requireAuth();
-  if (auth.error) return NextResponse.json({ ok: false, error: auth.error }, { status: auth.status });
   await clearCart();
   return NextResponse.json({ ok: true });
 }
