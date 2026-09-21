@@ -2119,6 +2119,28 @@ section.hero { padding: 0; }
       color: var(--ink-500);
     }
     .step-item.active .step-label { color: var(--burgundy-700); font-weight: 600; }
+    /* Bug: .steps-bar (display:flex, sem wrap) com 4 itens (Carrinho +
+       3 etapas), cada um com padding:0 20px e um "conector" de 40px entre
+       eles, nunca cabia em telas estreitas — o flex container simplesmente
+       ficava mais largo que a viewport (sem overflow visível em nenhum
+       elemento isolado), empurrando a página inteira e fazendo
+       window.innerWidth crescer de 390px para 670px no iPhone 13
+       (confirmado via Playwright). Corrigido permitindo quebra de linha
+       (flex-wrap) e removendo o conector "::before" no mobile, já que ele
+       não faz sentido visualmente quando os itens quebram em mais de uma
+       linha. */
+    @media (max-width: 640px) {
+      .steps-bar {
+        flex-wrap: wrap;
+        justify-content: center;
+        row-gap: 12px;
+        column-gap: 6px;
+        padding: 20px 16px;
+      }
+      .step-item { padding: 0 6px; }
+      .step-item + .step-item::before { display: none; }
+      .step-label { font-size: 11px; letter-spacing: 0.06em; }
+    }
 
     .checkout-page { padding: 48px 0 96px; }
     .checkout-layout {
