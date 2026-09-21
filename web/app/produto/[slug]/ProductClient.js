@@ -12,6 +12,7 @@ import { formatPrice } from '@/lib/data';
 import { addToCart } from '@/lib/cart';
 import { isFavorite, toggleFavorite } from '@/lib/favorites';
 import { PIX_DISCOUNT_RATE, INSTALLMENTS_MAX } from '@/lib/config';
+import { formatCep, validateCepFormat } from '@/lib/validation';
 
 // Recriado literalmente de design_files/product.html
 // Melhoria 1: galeria usa product.images[] (array real, sem efeitos CSS simulados
@@ -28,11 +29,52 @@ export default function ProductClient({ product, related }) {
   const [fav, setFav] = useState(false);
   const [favLoading, setFavLoading] = useState(false);
 
+  // Correção (auditoria pós-lançamento): a página de produto exibia um texto
+  // estático de frete (ex: "Frete R$ 24,90", vindo direto do banco/planilha),
+  // que nunca mudava e não refletia o CEP real do cliente. Agora calculamos
+  // o frete de fato via /api/shipping/calculate (mesma API usada no checkout),
+  // usando o peso real da peça (product.weightGrams) e o CEP informado aqui.
+  const [cep, setCep] = useState('');
+  const [shippingResult, setShippingResult] = useState(null); // { options, error }
+  const [shippingLoading, setShippingLoading] = useState(false);
+
   useEffect(() => {
     let mounted = true;
     isFavorite(product.dbId).then((v) => mounted && setFav(v));
     return () => { mounted = false; };
   }, [product.dbId]);
+
+  const handleCalcularFrete = async (e) => {
+    e.preventDefault();
+    const check = validateCepFormat(cep);
+    if (!check.valid) {
+      setShippingResult({ options: [], error: check.reason });
+      return;
+    }
+    setShippingLoading(true);
+    setShippingResult(null);
+    try {
+      const res = await fetch('/api/shipping/calculate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cep,
+          subtotal: product.price * qty,
+          items: [{ weightGrams: product.weightGrams, quantity: qty }],
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !Array.isArray(data.options) || data.options.length === 0) {
+        setShippingResult({ options: [], error: data.error || 'Não foi possível calcular o frete para este CEP.' });
+        return;
+      }
+      setShippingResult({ options: data.options, error: '' });
+    } catch {
+      setShippingResult({ options: [], error: 'Erro de conexão. Tente novamente.' });
+    } finally {
+      setShippingLoading(false);
+    }
+  };
 
   const isCedula = product.category === 'cedulas-br' || product.category === 'cedulas-int';
   const parcela = product.price / INSTALLMENTS_MAX;
@@ -198,9 +240,40 @@ export default function ProductClient({ product, related }) {
                   <span className="di-icon">
                     <Icon name="truck" size={20} />
                   </span>
-                  <div>
-                    <div className="di-title">{product.shipping}</div>
-                    <div className="di-sub">Envio em 1-2 dias úteis · Rastreado</div>
+                  <div style={{ flex: 1 }}>
+                    <div className="di-title">Calcular frete e prazo</div>
+                    <form className="cep-form" style={{ marginTop: 8 }} onSubmit={handleCalcularFrete}>
+                      <input
+                        placeholder="00000-000"
+                        value={cep}
+                        onChange={(e) => setCep(formatCep(e.target.value))}
+                        inputMode="numeric"
+                        aria-label="CEP para calcular o frete"
+                      />
+                      <button className="btn btn-ghost btn-sm" type="submit" disabled={shippingLoading}>
+                        {shippingLoading ? '...' : 'OK'}
+                      </button>
+                    </form>
+                    {shippingResult && shippingResult.error && (
+                      <div className="di-sub" style={{ color: 'var(--danger)', marginTop: 8 }}>
+                        {shippingResult.error}
+                      </div>
+                    )}
+                    {shippingResult && shippingResult.options.length > 0 && (
+                      <ul style={{ marginTop: 10, padding: 0, listStyle: 'none' }}>
+                        {shippingResult.options.map((o) => (
+                          <li key={o.id} className="di-sub" style={{ display: 'flex', justifyContent: 'space-between', gap: 8, padding: '4px 0' }}>
+                            <span>{o.name} · {o.days}</span>
+                            <b style={{ color: o.price === 0 ? 'var(--success)' : 'var(--ink-950)' }}>
+                              {o.price === 0 ? 'Grátis' : formatPrice(o.price)}
+                            </b>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {!shippingResult && (
+                      <div className="di-sub" style={{ marginTop: 6 }}>Envio em 1-2 dias úteis · Rastreado</div>
+                    )}
                   </div>
                 </div>
                 <div className="delivery-item">

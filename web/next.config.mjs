@@ -36,6 +36,7 @@ const securityHeaders = [
       "img-src 'self' data: blob: https:",
       "font-src 'self' data: https://fonts.gstatic.com",
       "connect-src 'self' https://viacep.com.br https://melhorenvio.com.br",
+      "frame-src https://maps.google.com https://www.google.com",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",

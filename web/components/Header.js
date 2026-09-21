@@ -91,7 +91,10 @@ export default function Header({ page = 'home' }) {
           <span>
             <Link href="/autenticidade">Autenticidade garantida</Link>
             <span className="divider"></span>
-            <a href={CONTACT.phoneHref}>{CONTACT.phoneDisplay}</a>
+            {/* Correção (auditoria pós-lançamento): este botão de telefone no topo
+                abria o discador do celular em vez do WhatsApp da loja. Trocado para
+                whatsappHref — mesmo padrão já usado no rodapé/página de contato. */}
+            <a href={CONTACT.whatsappHref} target="_blank" rel="noopener noreferrer">{CONTACT.phoneDisplay}</a>
             <span className="divider"></span>
             <Link href="/conta">Minha Conta</Link>
           </span>
@@ -199,7 +202,7 @@ export default function Header({ page = 'home' }) {
                 <Link href="/conta" onClick={() => setMenuOpen(false)}>
                   <Icon name="user" size={16} /> Minha Conta
                 </Link>
-                <a href={CONTACT.phoneHref}>
+                <a href={CONTACT.whatsappHref} target="_blank" rel="noopener noreferrer">
                   <Icon name="phone" size={16} /> {CONTACT.phoneDisplay}
                 </a>
               </div>

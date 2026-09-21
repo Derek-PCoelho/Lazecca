@@ -3063,6 +3063,26 @@ section.hero { padding: 0; }
       align-items: center;
       justify-content: center;
     }
+    /* Mapa real (Google Maps embed) — substitui o placeholder decorativo */
+    .map-block-real { background-image: none; }
+    .map-open-link {
+      position: absolute;
+      bottom: 12px;
+      right: 12px;
+      z-index: 2;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--paper-soft);
+      color: var(--burgundy-700);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 8px 14px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-md);
+      text-decoration: none;
+    }
+    .map-open-link:hover { background: var(--gold-100); }
     .map-pin {
       width: 44px; height: 44px;
       border-radius: 50%;

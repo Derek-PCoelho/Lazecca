@@ -213,15 +213,26 @@ export default function ContactPage() {
           </div>
         </div>
 
-        {/* Mapa */}
-        <div className="map-block">
-          <div className="map-pin">
-            <Icon name="map-pin" size={20} />
-          </div>
-          <div className="map-label">
-            <h4>La Zecca Numismática</h4>
-            <p>{CONTACT.addressFull}</p>
-          </div>
+        {/* Mapa — Correção (auditoria pós-lançamento): antes era um placeholder
+            estático (CSS decorativo, sem mapa real). Agora é um embed real do
+            Google Maps centrado no endereço da loja, com um link "Abrir no Google
+            Maps" para rotas/navegação — sem precisar de chave de API paga. */}
+        <div className="map-block map-block-real">
+          <iframe
+            title="Localização da La Zecca Numismática no Google Maps"
+            src={`https://maps.google.com/maps?q=${encodeURIComponent(CONTACT.addressFull)}&z=16&output=embed`}
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 0 }}
+          />
+          <a
+            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(CONTACT.addressFull)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="map-open-link"
+          >
+            <Icon name="map-pin" size={14} /> Abrir no Google Maps
+          </a>
         </div>
       </div>
 
