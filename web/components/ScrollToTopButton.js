@@ -13,22 +13,61 @@ import { useEffect, useState } from 'react';
 // =============================================================================
 
 const SHOW_AFTER_PX = 480;
+// Posição fixa do botão (mantida em sincronia com o style abaixo) — usada
+// apenas para calcular colisão com conteúdo da página em JS.
+const BTN_RIGHT = 16;
+const BTN_BOTTOM = 84;
+const BTN_SIZE = 44;
+const COLLISION_MARGIN = 8; // pequena folga extra ao redor do botão
 
 export default function ScrollToTopButton() {
   const [visible, setVisible] = useState(false);
+  // Correção (Problema 4 — mobile): o botão fixo de "voltar ao topo" cobria
+  // o canto do card verde "Confirme sua visita" (.whatsapp-card) quando a
+  // página era rolada até essa seção, já que sua posição fixa não tem
+  // nenhuma noção do conteúdo por baixo dele. Em vez de mover o botão para
+  // sempre (o que abriria espaço vazio no resto da página), detectamos
+  // colisão real: a cada scroll, comparamos o retângulo do botão com o
+  // retângulo de qualquer .whatsapp-card presente na página e escondemos
+  // (fade-out) o botão só enquanto os dois se sobrepõem.
+  const [overlapping, setOverlapping] = useState(false);
 
   useEffect(() => {
+    const checkOverlap = () => {
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const btnLeft = vw - BTN_RIGHT - BTN_SIZE - COLLISION_MARGIN;
+      const btnRight = vw - BTN_RIGHT + COLLISION_MARGIN;
+      const btnTop = vh - BTN_BOTTOM - BTN_SIZE - COLLISION_MARGIN;
+      const btnBottom = vh - BTN_BOTTOM + COLLISION_MARGIN;
+
+      const cards = document.querySelectorAll('.whatsapp-card');
+      for (const card of cards) {
+        const r = card.getBoundingClientRect();
+        const hit = r.left < btnRight && r.right > btnLeft && r.top < btnBottom && r.bottom > btnTop;
+        if (hit) return true;
+      }
+      return false;
+    };
+
     const onScroll = () => {
       setVisible(window.scrollY > SHOW_AFTER_PX);
+      setOverlapping(checkOverlap());
     };
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    window.addEventListener('resize', onScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+    };
   }, []);
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  const shown = visible && !overlapping;
 
   return (
     <button
@@ -38,11 +77,11 @@ export default function ScrollToTopButton() {
       title="Voltar ao topo"
       style={{
         position: 'fixed',
-        right: 16,
-        bottom: 84,
+        right: BTN_RIGHT,
+        bottom: BTN_BOTTOM,
         zIndex: 9998,
-        width: 44,
-        height: 44,
+        width: BTN_SIZE,
+        height: BTN_SIZE,
         borderRadius: '50%',
         border: '1px solid rgba(122, 31, 43, 0.25)',
         background: 'rgba(58, 20, 32, 0.88)',
@@ -52,9 +91,9 @@ export default function ScrollToTopButton() {
         alignItems: 'center',
         justifyContent: 'center',
         cursor: 'pointer',
-        opacity: visible ? 1 : 0,
-        transform: visible ? 'translateY(0)' : 'translateY(12px)',
-        pointerEvents: visible ? 'auto' : 'none',
+        opacity: shown ? 1 : 0,
+        transform: shown ? 'translateY(0)' : 'translateY(12px)',
+        pointerEvents: shown ? 'auto' : 'none',
         transition: 'opacity 0.2s ease, transform 0.2s ease',
       }}
     >
