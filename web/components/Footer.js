@@ -72,6 +72,9 @@ export default function Footer() {
                 <Link href="/diario">Diário Numismático</Link>
               </li>
               <li>
+                <Link href="/como-chegar">Como Chegar</Link>
+              </li>
+              <li>
                 <Link href="/contato">Contato</Link>
               </li>
               <li>

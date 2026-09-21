@@ -80,6 +80,7 @@ export default function Header({ page = 'home' }) {
     { key: 'blog', label: 'Diário', href: '/diario' },
     { key: 'about', label: 'Sobre', href: '/sobre' },
     { key: 'auth', label: 'Autenticidade', href: '/autenticidade' },
+    { key: 'como-chegar', label: 'Como Chegar', href: '/como-chegar' },
     { key: 'contact', label: 'Contato', href: '/contato' },
   ];
 

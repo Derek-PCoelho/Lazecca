@@ -25,6 +25,7 @@ export default async function sitemap() {
     { path: '/sobre', changeFrequency: 'monthly', priority: 0.5 },
     { path: '/autenticidade', changeFrequency: 'monthly', priority: 0.5 },
     { path: '/diario', changeFrequency: 'weekly', priority: 0.6 },
+    { path: '/como-chegar', changeFrequency: 'yearly', priority: 0.4 },
     { path: '/contato', changeFrequency: 'yearly', priority: 0.3 },
     { path: '/politica-de-privacidade', changeFrequency: 'yearly', priority: 0.2 },
     { path: '/termos-de-uso', changeFrequency: 'yearly', priority: 0.2 },
