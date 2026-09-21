@@ -10,6 +10,18 @@ export const dynamic = 'force-dynamic';
 
 const PIX_DISCOUNT_RATE = 0.05;
 
+// Bloco 4 — erro específico lançado quando o UPDATE condicional de estoque
+// (compare-and-swap) não afeta nenhuma linha, ou seja, outra compra
+// concorrente esgotou o estoque entre a checagem inicial e a transação.
+class StockConflictError extends Error {
+  constructor(productName, available) {
+    super(`Estoque insuficiente para "${productName}"`);
+    this.name = 'StockConflictError';
+    this.productName = productName;
+    this.available = available;
+  }
+}
+
 function generateOrderNumber() {
   const year = new Date().getFullYear();
   const rand = Math.floor(10000 + Math.random() * 89999);
@@ -57,7 +69,10 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Carrinho vazio.' }, { status: 400 });
     }
 
-    // Revalida estoque no momento da compra (Melhoria 13 — nunca confiar só no client)
+    // Revalida estoque no momento da compra (Melhoria 13 — nunca confiar só no
+    // client). Esta é só uma checagem rápida de UX para dar erro cedo — a
+    // garantia real de concorrência (Bloco 4) acontece dentro da transação
+    // abaixo, com update condicional atômico (compare-and-swap no banco).
     for (const item of cartItems) {
       if (item.quantity > item.product.stock) {
         return NextResponse.json(
@@ -84,54 +99,83 @@ export async function POST(request) {
 
     const orderNumber = generateOrderNumber();
 
-    // Cria pedido + itens + baixa de estoque em transação atômica
-    const order = await prisma.$transaction(async (tx) => {
-      const created = await tx.order.create({
-        data: {
-          orderNumber,
-          userId: user?.id || null,
-          customerName: customer.name,
-          customerEmail: customer.email,
-          customerPhone: customer.phone || null,
-          customerCpf: customer.cpf || null,
-          shippingStreet: address.street || null,
-          shippingNumber: address.number || null,
-          shippingComplement: address.complement || null,
-          shippingNeighborhood: address.neighborhood || null,
-          shippingCity: address.city || null,
-          shippingState: address.state || null,
-          shippingZipCode: address.zipCode || null,
-          subtotal,
-          shippingMethod: shippingMethod || 'pac',
-          shippingPrice: chosenShipping.price,
-          discountTotal,
-          total,
-          paymentMethod: paymentMethod || 'pix',
-          items: {
-            create: cartItems.map((i) => ({
-              productId: i.productId,
-              productName: i.product.name,
-              unitPrice: i.product.price,
-              quantity: i.quantity,
-            })),
+    // Bloco 4 — Cria pedido + itens + baixa de estoque em transação atômica,
+    // com baixa CONDICIONAL (compare-and-swap no banco): o UPDATE só decrementa
+    // se stock >= quantity NAQUELE INSTANTE da execução no banco, não no
+    // instante em que lemos `cartItems` acima. Isso fecha a janela de corrida
+    // em que duas compras simultâneas do último exemplar poderiam decrementar
+    // o estoque para negativo — o segundo UPDATE simplesmente afeta 0 linhas
+    // e a transação inteira é revertida (nenhum pedido "fantasma" é criado).
+    let stockConflict = null;
+    let order;
+    try {
+      order = await prisma.$transaction(async (tx) => {
+        // A baixa de estoque vem ANTES da criação do pedido: se qualquer item
+        // não tiver mais estoque suficiente (comprado por outra pessoa entre
+        // a checagem acima e agora), abortamos a transação inteira antes de
+        // gravar qualquer coisa.
+        for (const item of cartItems) {
+          const result = await tx.product.updateMany({
+            where: { id: item.productId, stock: { gte: item.quantity } },
+            data: { stock: { decrement: item.quantity } },
+          });
+          if (result.count === 0) {
+            // Nenhuma linha afetada = outra compra concorrente já esgotou o
+            // estoque disponível para este item entre a checagem e agora.
+            const fresh = await tx.product.findUnique({ where: { id: item.productId }, select: { name: true, stock: true } });
+            throw new StockConflictError(fresh?.name || item.product.name, fresh?.stock ?? 0);
+          }
+        }
+
+        const created = await tx.order.create({
+          data: {
+            orderNumber,
+            userId: user?.id || null,
+            customerName: customer.name,
+            customerEmail: customer.email,
+            customerPhone: customer.phone || null,
+            customerCpf: customer.cpf || null,
+            shippingStreet: address.street || null,
+            shippingNumber: address.number || null,
+            shippingComplement: address.complement || null,
+            shippingNeighborhood: address.neighborhood || null,
+            shippingCity: address.city || null,
+            shippingState: address.state || null,
+            shippingZipCode: address.zipCode || null,
+            subtotal,
+            shippingMethod: shippingMethod || 'pac',
+            shippingPrice: chosenShipping.price,
+            discountTotal,
+            total,
+            paymentMethod: paymentMethod || 'pix',
+            items: {
+              create: cartItems.map((i) => ({
+                productId: i.productId,
+                productName: i.product.name,
+                unitPrice: i.product.price,
+                quantity: i.quantity,
+              })),
+            },
           },
-        },
-        include: { items: true },
-      });
-
-      // Baixa de estoque (Melhoria 13 — agora reforçada no servidor)
-      for (const item of cartItems) {
-        await tx.product.update({
-          where: { id: item.productId },
-          data: { stock: { decrement: item.quantity } },
+          include: { items: true },
         });
+
+        // Esvazia o carrinho
+        await tx.cartItem.deleteMany({ where: { cartId: cart.id } });
+
+        return created;
+      });
+    } catch (err) {
+      if (err instanceof StockConflictError) {
+        return NextResponse.json(
+          {
+            error: `"${err.productName}" não está mais disponível na quantidade desejada (restam ${err.available}). Outra pessoa pode ter comprado essa peça única segundos atrás — ajuste seu carrinho.`,
+          },
+          { status: 409 }
+        );
       }
-
-      // Esvazia o carrinho
-      await tx.cartItem.deleteMany({ where: { cartId: cart.id } });
-
-      return created;
-    });
+      throw err;
+    }
 
     // Pagamento (Checkout Transparente — pré-implementado, roda em modo
     // simulado até MERCADOPAGO_ACCESS_TOKEN ser configurado)
