@@ -1679,7 +1679,17 @@ section.hero { padding: 0; }
       gap: 12px;
       margin-bottom: 32px;
     }
+    /* Itens de grid têm min-width:auto por padrão, ou seja, nunca encolhem
+       além do "min-content" do texto/conteúdo interno ("Direito de
+       arrependimento" etc.) — isso fazia essa coluna do grid (e, em cascata,
+       .product-layout inteiro, incluindo <html>) "estourar" a largura da
+       viewport em telas estreitas (confirmado: 465px em vez de 390px no
+       iPhone 13), empurrando toda a página para o lado sem gerar overflow
+       visível em nenhum elemento isolado — só o documento inteiro ficava
+       mais largo que a tela. min-width:0 permite ao item do grid encolher
+       normalmente e deixar o texto quebrar linha como esperado. */
     .delivery-item {
+      min-width: 0;
       padding: 14px 16px;
       background: var(--paper-soft);
       border: 1px solid var(--line-soft);
@@ -1688,6 +1698,7 @@ section.hero { padding: 0; }
       gap: 12px;
       align-items: flex-start;
     }
+    .delivery-item > div { min-width: 0; }
     .delivery-item .di-icon {
       color: var(--burgundy-700);
       flex-shrink: 0;
@@ -3025,6 +3036,13 @@ section.hero { padding: 0; }
       padding: 56px 0 96px;
       align-items: start;
     }
+    /* min-width:0 nos itens diretos do grid — sem isso, itens de grid usam
+       min-width:auto (nunca encolhem além do min-content do conteúdo), o
+       que "estourava" a largura de toda a página em mobile mesmo com
+       grid-template-columns:1fr no media query abaixo (mesma causa raiz do
+       bug corrigido em .delivery-block/.delivery-item). Confirmado via
+       Playwright: innerWidth chegava a 418px em vez de 390px no iPhone 13. */
+    .contact-layout > * { min-width: 0; }
     @media (max-width: 900px) { .contact-layout { grid-template-columns: 1fr; gap: 32px; } }
 
     .contact-info-card {
