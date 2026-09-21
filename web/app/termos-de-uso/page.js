@@ -44,7 +44,7 @@ export default function TermosDeUsoPage() {
           finalizar uma compra, você concorda com os termos abaixo.
         </p>
 
-        <section style={SECTION_STYLE}>
+        <div style={SECTION_STYLE}>
           <h2 style={H2_STYLE}>1. Sobre as peças vendidas</h2>
           <p style={P_STYLE}>
             Todas as cédulas e moedas do nosso acervo são peças <strong>usadas,
@@ -61,9 +61,9 @@ export default function TermosDeUsoPage() {
             de portfólio de curadoria, sem possibilidade de nova compra daquele
             exemplar específico.
           </p>
-        </section>
+        </div>
 
-        <section style={SECTION_STYLE}>
+        <div style={SECTION_STYLE}>
           <h2 style={H2_STYLE}>2. Cadastro e conta</h2>
           <p style={P_STYLE}>
             Para comprar no site, é necessário criar uma conta com e-mail e senha.
@@ -73,9 +73,9 @@ export default function TermosDeUsoPage() {
             atualizadas — usamos o CPF para identificação em pedidos e emissão de
             nota fiscal.
           </p>
-        </section>
+        </div>
 
-        <section style={SECTION_STYLE}>
+        <div style={SECTION_STYLE}>
           <h2 style={H2_STYLE}>3. Preços, frete e formas de pagamento</h2>
           <ul style={UL_STYLE}>
             <li>Os preços exibidos estão em reais (R$) e podem ser alterados sem aviso prévio, até o momento da confirmação do pedido.</li>
@@ -84,9 +84,9 @@ export default function TermosDeUsoPage() {
             <li>Aceitamos PIX, cartão de crédito (parcelamento em até 10× sem juros) e boleto bancário. O processamento de pagamentos eletrônicos é realizado pelo Mercado Pago.</li>
             <li>O boleto tem vencimento em até 3 dias úteis; se não for pago até o vencimento, o pedido é automaticamente cancelado e a peça liberada para outros compradores.</li>
           </ul>
-        </section>
+        </div>
 
-        <section style={SECTION_STYLE}>
+        <div style={SECTION_STYLE}>
           <h2 style={H2_STYLE}>4. Direito de arrependimento e cancelamento</h2>
           <p style={P_STYLE}>
             Em conformidade com o Art. 49 do Código de Defesa do Consumidor, você
@@ -104,9 +104,9 @@ export default function TermosDeUsoPage() {
             já tiver sido enviado, entre em contato pelo WhatsApp para avaliarmos o
             caso.
           </p>
-        </section>
+        </div>
 
-        <section style={SECTION_STYLE}>
+        <div style={SECTION_STYLE}>
           <h2 style={H2_STYLE}>5. Autenticidade e garantias</h2>
           <p style={P_STYLE}>
             Todas as peças passam pelo processo de autenticação descrito na nossa
@@ -116,9 +116,9 @@ export default function TermosDeUsoPage() {
             autenticidade de uma peça recebida, entre em contato imediatamente
             pelos canais de atendimento.
           </p>
-        </section>
+        </div>
 
-        <section style={SECTION_STYLE}>
+        <div style={SECTION_STYLE}>
           <h2 style={H2_STYLE}>6. Uso aceitável do site</h2>
           <p style={P_STYLE}>Ao usar este site, você concorda em não:</p>
           <ul style={UL_STYLE}>
@@ -127,36 +127,36 @@ export default function TermosDeUsoPage() {
             <li>Fornecer informações falsas no cadastro ou na finalização de pedidos;</li>
             <li>Utilizar o conteúdo do site (fotos, descrições, textos) para fins comerciais próprios sem autorização.</li>
           </ul>
-        </section>
+        </div>
 
-        <section style={SECTION_STYLE}>
+        <div style={SECTION_STYLE}>
           <h2 style={H2_STYLE}>7. Propriedade intelectual</h2>
           <p style={P_STYLE}>
             Todo o conteúdo deste site — textos, fotografias das peças, identidade
             visual e marca &quot;La Zecca Numismática&quot; — pertence à La Zecca ou é usado
             sob licença, e não pode ser reproduzido sem autorização prévia.
           </p>
-        </section>
+        </div>
 
-        <section style={SECTION_STYLE}>
+        <div style={SECTION_STYLE}>
           <h2 style={H2_STYLE}>8. Privacidade e dados pessoais</h2>
           <p style={P_STYLE}>
             O tratamento dos seus dados pessoais é descrito em detalhes na nossa{' '}
             <Link href="/politica-de-privacidade" style={{ color: 'var(--burgundy-700)' }}>Política de Privacidade</Link>,
             que faz parte integrante destes Termos de Uso.
           </p>
-        </section>
+        </div>
 
-        <section style={SECTION_STYLE}>
+        <div style={SECTION_STYLE}>
           <h2 style={H2_STYLE}>9. Alterações a estes termos</h2>
           <p style={P_STYLE}>
             Podemos atualizar estes Termos de Uso periodicamente para refletir
             mudanças no funcionamento do site ou na legislação aplicável. A data da
             última atualização estará sempre indicada no topo desta página.
           </p>
-        </section>
+        </div>
 
-        <section style={SECTION_STYLE}>
+        <div style={SECTION_STYLE}>
           <h2 style={H2_STYLE}>10. Contato</h2>
           <p style={P_STYLE}>
             Em caso de dúvidas sobre estes Termos de Uso, entre em contato pelos
@@ -165,7 +165,7 @@ export default function TermosDeUsoPage() {
             pelo e-mail <a href={`mailto:${CONTACT.email}`} style={{ color: 'var(--burgundy-700)' }}>{CONTACT.email}</a>{' '}
             ou pelo telefone <a href={CONTACT.phoneHref} style={{ color: 'var(--burgundy-700)' }}>{CONTACT.phoneDisplay}</a>.
           </p>
-        </section>
+        </div>
 
         <div style={{ marginTop: 40 }}>
           <Link href="/" className="btn btn-outline">Voltar ao início</Link>

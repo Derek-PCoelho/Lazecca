@@ -1,5 +1,6 @@
 import './globals.css';
 import CookieConsentBanner from '@/components/CookieConsentBanner';
+import ScrollToTopButton from '@/components/ScrollToTopButton';
 
 // Bloco 9 (SEO) — URL base usada para resolver metadados relativos (og:image,
 // canonical, etc.) e como fallback quando NEXT_PUBLIC_SITE_URL não estiver
@@ -106,6 +107,7 @@ export default function RootLayout({ children }) {
       <body>
         {children}
         <CookieConsentBanner />
+        <ScrollToTopButton />
       </body>
     </html>
   );

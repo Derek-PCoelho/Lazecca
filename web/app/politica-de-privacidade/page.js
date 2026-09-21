@@ -48,7 +48,7 @@ export default function PoliticaDePrivacidadePage() {
           (Lei nº 13.709/2018 — LGPD).
         </p>
 
-        <section style={SECTION_STYLE}>
+        <div style={SECTION_STYLE}>
           <h2 style={H2_STYLE}>1. Quais dados coletamos</h2>
           <p style={P_STYLE}>Coletamos apenas os dados necessários para operar a loja e atender você:</p>
           <ul style={UL_STYLE}>
@@ -63,9 +63,9 @@ export default function PoliticaDePrivacidadePage() {
             pagamento por cartão estiver ativo, ele é processado diretamente pelo Mercado
             Pago, que possui sua própria política de privacidade e certificação PCI-DSS.
           </p>
-        </section>
+        </div>
 
-        <section style={SECTION_STYLE}>
+        <div style={SECTION_STYLE}>
           <h2 style={H2_STYLE}>2. Para que usamos seus dados</h2>
           <ul style={UL_STYLE}>
             <li>Processar seu cadastro, login e gerenciamento de conta;</li>
@@ -76,9 +76,9 @@ export default function PoliticaDePrivacidadePage() {
             <li>Cumprir obrigações legais e fiscais (emissão de nota fiscal, guarda de registros de venda pelo prazo exigido por lei);</li>
             <li>Prevenir fraudes e abusos (ex.: limitação de tentativas de login, detecção de concorrência indevida no estoque).</li>
           </ul>
-        </section>
+        </div>
 
-        <section style={SECTION_STYLE}>
+        <div style={SECTION_STYLE}>
           <h2 style={H2_STYLE}>3. Compartilhamento de dados</h2>
           <p style={P_STYLE}>Seus dados podem ser compartilhados apenas com:</p>
           <ul style={UL_STYLE}>
@@ -91,9 +91,9 @@ export default function PoliticaDePrivacidadePage() {
             Não vendemos, alugamos ou compartilhamos seus dados pessoais com terceiros
             para fins de publicidade de terceiros.
           </p>
-        </section>
+        </div>
 
-        <section style={SECTION_STYLE}>
+        <div style={SECTION_STYLE}>
           <h2 style={H2_STYLE}>4. Por quanto tempo guardamos seus dados</h2>
           <p style={P_STYLE}>
             Mantemos seus dados de cadastro enquanto sua conta estiver ativa. Dados de
@@ -102,9 +102,9 @@ export default function PoliticaDePrivacidadePage() {
             da sua conta a qualquer momento (ver seção 5), respeitadas as obrigações
             legais de guarda de registros fiscais.
           </p>
-        </section>
+        </div>
 
-        <section style={SECTION_STYLE}>
+        <div style={SECTION_STYLE}>
           <h2 style={H2_STYLE}>5. Seus direitos como titular dos dados</h2>
           <p style={P_STYLE}>De acordo com a LGPD, você tem direito a:</p>
           <ul style={UL_STYLE}>
@@ -123,9 +123,9 @@ export default function PoliticaDePrivacidadePage() {
             ou pelo e-mail <a href={`mailto:${CONTACT.email}`} style={{ color: 'var(--burgundy-700)' }}>{CONTACT.email}</a>.
             Responderemos sua solicitação em prazo razoável, conforme previsto em lei.
           </p>
-        </section>
+        </div>
 
-        <section style={SECTION_STYLE}>
+        <div style={SECTION_STYLE}>
           <h2 style={H2_STYLE}>6. Cookies</h2>
           <p style={P_STYLE}>
             Utilizamos apenas um cookie estritamente necessário ao funcionamento do
@@ -141,9 +141,9 @@ export default function PoliticaDePrivacidadePage() {
             de cookies exibido no rodapé do site passará a oferecer opções granulares de
             consentimento para cookies não essenciais.
           </p>
-        </section>
+        </div>
 
-        <section style={SECTION_STYLE}>
+        <div style={SECTION_STYLE}>
           <h2 style={H2_STYLE}>7. Segurança dos dados</h2>
           <p style={P_STYLE}>
             Adotamos medidas técnicas para proteger seus dados: senhas armazenadas com
@@ -152,18 +152,18 @@ export default function PoliticaDePrivacidadePage() {
             de tentativas de login para dificultar ataques automatizados, e controle de
             acesso restrito ao painel administrativo.
           </p>
-        </section>
+        </div>
 
-        <section style={SECTION_STYLE}>
+        <div style={SECTION_STYLE}>
           <h2 style={H2_STYLE}>8. Alterações a esta política</h2>
           <p style={P_STYLE}>
             Podemos atualizar esta Política de Privacidade periodicamente. A data da
             última atualização estará sempre indicada no topo desta página.
             Recomendamos que você a revise periodicamente.
           </p>
-        </section>
+        </div>
 
-        <section style={SECTION_STYLE}>
+        <div style={SECTION_STYLE}>
           <h2 style={H2_STYLE}>9. Contato</h2>
           <p style={P_STYLE}>
             Em caso de dúvidas sobre esta Política de Privacidade ou sobre o tratamento
@@ -172,7 +172,7 @@ export default function PoliticaDePrivacidadePage() {
             pelo e-mail <a href={`mailto:${CONTACT.email}`} style={{ color: 'var(--burgundy-700)' }}>{CONTACT.email}</a>{' '}
             ou pelo telefone <a href={CONTACT.phoneHref} style={{ color: 'var(--burgundy-700)' }}>{CONTACT.phoneDisplay}</a>.
           </p>
-        </section>
+        </div>
 
         <div style={{ marginTop: 40 }}>
           <Link href="/" className="btn btn-outline">Voltar ao início</Link>

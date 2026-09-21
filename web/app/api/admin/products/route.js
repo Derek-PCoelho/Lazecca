@@ -11,14 +11,24 @@ export async function GET(request) {
 
   const { searchParams } = new URL(request.url);
   const q = searchParams.get('q') || '';
+  const categoryId = searchParams.get('categoryId') || '';
 
+  const where = {};
+  if (q) {
+    where.OR = [{ name: { contains: q } }, { legacyCode: { contains: q } }, { slug: { contains: q } }];
+  }
+  if (categoryId) {
+    where.categoryId = categoryId === 'none' ? null : categoryId;
+  }
+
+  // Ordenado por categoria (sortOrder da própria categoria) e, dentro dela,
+  // por legacyCode decrescente (mais recentes primeiro) — permite que a tela
+  // de admin agrupe visualmente por categoria em vez da lista plana por ID.
   const products = await prisma.product.findMany({
-    where: q
-      ? { OR: [{ name: { contains: q } }, { legacyCode: { contains: q } }, { slug: { contains: q } }] }
-      : undefined,
+    where: Object.keys(where).length ? where : undefined,
     include: { category: true, images: true },
-    orderBy: { createdAt: 'desc' },
-    take: 200,
+    orderBy: [{ category: { sortOrder: 'asc' } }, { legacyCode: 'desc' }],
+    take: 500,
   });
   return NextResponse.json({ products });
 }
