@@ -6,8 +6,14 @@ import Icon from '@/components/Icon';
 import { CONTACT } from '@/lib/config';
 
 export const metadata = {
-  title: 'Sobre',
-  description: 'A história da La Zecca e do Dr. Sergio Costa — 27 anos de curadoria numismática em Fortaleza/CE.',
+  title: 'Sobre a La Zecca Numismática',
+  description: 'A história da La Zecca Numismática e do Dr. Sergio Costa — 27 anos de curadoria de cédulas e moedas antigas para colecionadores em Fortaleza/CE e em todo o Brasil.',
+  alternates: { canonical: '/sobre' },
+  openGraph: {
+    title: 'Sobre a La Zecca Numismática',
+    description: 'A história da La Zecca e do Dr. Sergio Costa — 27 anos de curadoria numismática em Fortaleza/CE.',
+    url: '/sobre',
+  },
 };
 
 // Recriado literalmente de design_files/about.html

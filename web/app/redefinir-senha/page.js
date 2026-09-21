@@ -3,6 +3,7 @@ import ResetPasswordClient from './ResetPasswordClient';
 
 export const metadata = {
   title: 'Redefinir senha',
+  robots: { index: false, follow: false },
 };
 
 export default function ResetPasswordPage() {

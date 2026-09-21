@@ -13,16 +13,31 @@ export async function generateMetadata({ params }) {
   if (!product) {
     return { title: 'Produto não encontrado' };
   }
-  const description = product.description?.slice(0, 155) || `${product.name} — peça autenticada do acervo La Zecca.`;
+  // SEO — cada produto ganha um <title> único e descritivo (em vez de repetir
+  // apenas o nome curto da peça), incluindo o código de referência, o tipo da
+  // peça (cédula/moeda) e as palavras-chave de negócio mais relevantes, ex.:
+  // "1 Cruzeiro · 1944 (C0001) | Cédula Antiga Autenticada | La Zecca Numismática".
+  const pieceType = product.metal === 'Papel-moeda' ? 'Cédula Antiga' : 'Moeda Antiga';
+  const title = `${product.name} (${product.id}) | ${pieceType} Autenticada`;
+  const description =
+    product.description?.slice(0, 150) ||
+    `${product.name} — ${pieceType.toLowerCase()} de colecionador autenticada pela La Zecca Numismática, em Fortaleza/CE. Estado de conservação: ${product.stateLabel || product.state}.`;
   return {
-    title: product.name,
+    title,
     description,
     alternates: { canonical: `/produto/${product.slug}` },
     openGraph: {
       type: 'website',
-      title: product.name,
+      title: `${title} · La Zecca Numismática`,
       description,
-      images: product.image ? [`/${product.image}`] : [],
+      url: `/produto/${product.slug}`,
+      images: product.image ? [{ url: `/${product.image}`, alt: product.name }] : undefined,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${title} · La Zecca Numismática`,
+      description,
+      images: product.image ? [`/${product.image}`] : undefined,
     },
   };
 }
@@ -51,6 +66,7 @@ function ProductJsonLd({ product }) {
           ? 'https://schema.org/OutOfStock'
           : 'https://schema.org/InStock',
       itemCondition: 'https://schema.org/UsedCondition',
+      seller: { '@type': 'Organization', name: 'La Zecca Numismática', url: siteUrl },
     },
   };
   return (

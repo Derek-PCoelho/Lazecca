@@ -3,6 +3,7 @@ import AccountClient from './AccountClient';
 
 export const metadata = {
   title: 'Minha Conta',
+  alternates: { canonical: '/conta' },
   robots: { index: false, follow: false },
 };
 

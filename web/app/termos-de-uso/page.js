@@ -21,6 +21,7 @@ import { CONTACT } from '@/lib/config';
 export const metadata = {
   title: 'Termos de Uso',
   description: 'Termos de Uso que regem a navegação e as compras realizadas no site da La Zecca Numismática.',
+  alternates: { canonical: '/termos-de-uso' },
 };
 
 const SECTION_STYLE = { marginTop: 32 };
