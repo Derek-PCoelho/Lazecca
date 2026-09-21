@@ -7,10 +7,16 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import PasswordStrengthHints from '@/components/PasswordStrengthHints';
 import { validatePasswordStrength } from '@/lib/validation';
+// Página compartilhada por clientes (link vindo de /conta) E pelo painel
+// administrativo (link vindo de /admin/login), diferenciados por ?admin=1
+// no link de redefinição — mesmo endpoint (/api/auth/reset-password), só a
+// aparência e o destino final do botão mudam.
+import '@/app/admin/admin.css';
 
 export default function ResetPasswordClient() {
   const params = useSearchParams();
   const token = params.get('token') || '';
+  const isAdmin = params.get('admin') === '1';
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -48,6 +54,47 @@ export default function ResetPasswordClient() {
       setSubmitting(false);
     }
   };
+
+  // Versão para o painel administrativo: visual consistente com /admin/login
+  // (cartão sobre fundo bordô), sem o Header/Footer da loja pública, e o
+  // botão final leva de volta a /admin/login em vez de /conta.
+  if (isAdmin) {
+    return (
+      <div className="admin-login-page">
+        <div className="admin-login-card">
+          <h2 style={{ marginBottom: 4 }}>LA ZECCA</h2>
+          <p style={{ color: '#7a7168', fontSize: 13, marginBottom: 24 }}>Redefinir senha do painel administrativo</p>
+
+          {!token ? (
+            <p style={{ fontSize: 14 }}>
+              Link inválido ou incompleto. <Link href="/admin/login">Volte para o login</Link> e solicite um novo link.
+            </p>
+          ) : done ? (
+            <div>
+              <p style={{ fontSize: 14, marginBottom: 16, color: '#2e7d32' }}>Senha redefinida com sucesso!</p>
+              <a href="/admin/login" className="admin-btn" style={{ width: '100%', textAlign: 'center' }}>Entrar agora</a>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit}>
+              {error && <p style={{ color: '#a12626', fontSize: 13, marginBottom: 12 }}>{error}</p>}
+              <div className="admin-form-field">
+                <label>Nova senha</label>
+                <input type="password" required placeholder="Mínimo 12 caracteres" value={password} onChange={(e) => setPassword(e.target.value)} />
+                <PasswordStrengthHints password={password} />
+              </div>
+              <div className="admin-form-field">
+                <label>Confirmar nova senha</label>
+                <input type="password" required placeholder="Repita a nova senha" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
+              </div>
+              <button className="admin-btn" style={{ width: '100%' }} disabled={submitting}>
+                {submitting ? 'Salvando...' : 'Redefinir senha'}
+              </button>
+            </form>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
