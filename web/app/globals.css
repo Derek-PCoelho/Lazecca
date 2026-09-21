@@ -3198,6 +3198,18 @@ section.hero { padding: 0; }
       text-decoration: none;
     }
     .map-open-link:hover { background: var(--gold-100); }
+
+    /* Página "Como Chegar" — mapa + endereço lado a lado no desktop,
+       empilhados em telas estreitas. */
+    .como-chegar-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 40px;
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .como-chegar-grid { grid-template-columns: 1fr; gap: 28px; }
+    }
     .map-pin {
       width: 44px; height: 44px;
       border-radius: 50%;
