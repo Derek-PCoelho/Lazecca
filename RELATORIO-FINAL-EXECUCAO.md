@@ -839,29 +839,97 @@ nav`) criado na branch `genspark_ai_developer`, rebaseado sobre
 `origin/main` (que já continha o merge do PR #6 do bloco anterior) sem
 conflitos, e enviado ao GitHub.
 
-### 15.8 Deploy em produção (Hostinger) — bloqueado, requer ação do cliente/usuário
+### 15.8 Deploy em produção (Hostinger) — ✅ concluído com sucesso
 
-O deploy real documentado na Seção 11.2 foi feito via **API oficial da
-Hostinger**, usando um **token de API fornecido pelo usuário na própria
-conversa daquela sessão** — por política de segurança, esse token nunca
-foi persistido em nenhum arquivo do repositório ou do ambiente, e portanto
-**não está disponível nesta sessão**. Não há, no código ou no ambiente
-atual, nenhuma credencial de Hostinger (token de API, usuário/senha de
-hPanel, ou chave SSH) que permita repetir o processo de deploy
-automaticamente.
+O deploy foi inicialmente bloqueado nesta sessão por falta de credencial
+(o token de API usado na Seção 11.2 não é persistido entre sessões, por
+política de segurança). O usuário forneceu um novo **token de API da
+Hostinger** diretamente na conversa, o que permitiu concluir o processo
+integralmente por API oficial, repetindo a metodologia da Seção 11.2:
 
-**Para concluir o deploy**, é necessário que o usuário forneça uma das
-opções abaixo:
-1. Um **token de API da Hostinger** (gerado em
-   `hpanel.hostinger.com` → API → criar token), para repetir o processo
-   documentado em 11.2 (upload do zip do código-fonte via API + trigger de
-   build remoto); ou
-2. **Acesso SSH** ao servidor (host, usuário, senha ou chave), para um
-   `git pull` + rebuild diretamente no servidor; ou
-3. Confirmação para o **próprio cliente/usuário** realizar o deploy
-   manualmente pelo hPanel (upload do código atualizado + "Rebuild" no
-   painel Node.js), usando este PR como a versão de código a publicar.
+1. **Validação do token**: `GET /api/hosting/v1/websites` confirmou token
+   válido para o site `lazecca.com.br` (username `u610602689`).
+2. **Configuração de build recuperada** do histórico do último deploy
+   bem-sucedido: `node_version: 20`, `app_type: "next"`,
+   `output_directory: ".next"`, `build_script: "build"`,
+   `package_manager: "npm"`.
+3. **Empacotamento do código-fonte**: `web/` completo, excluindo
+   `node_modules/`, `.next/`, `.git/`, `.env*` e `*.log` — pacote final de
+   14.818.742 bytes (227 arquivos), verificado manualmente para garantir
+   que nenhum segredo (`.env`) foi incluído.
+4. **Upload via protocolo TUS 1.0.0** (resumable upload): credenciais
+   geradas via `POST /api/hosting/v1/files/upload-urls`; sessão criada
+   (`POST` → `201 Created`) e conteúdo enviado (`PATCH` →
+   `204 No Content`, `Upload-Offset` final igual ao tamanho do arquivo).
+5. **Variáveis de ambiente**: consultadas via
+   `GET .../nodejs/builds/settings/env` (10 chaves, valores mascarados) —
+   confirmado que já estavam corretamente configuradas do deploy anterior;
+   **não foram alteradas** nesta rodada, já que este endpoint faz
+   substituição completa (full-replace) e nenhuma variável precisava
+   mudar para esta atualização.
+6. **Build remoto disparado**: `POST .../nodejs/builds` com
+   `source_type: "archive"` apontando para o zip enviado. UUID retornado:
+   `01a0c223-270b-72c1-b8c6-b3d6c869dc11`, estado inicial `pending`.
+7. **Acompanhamento**: build monitorado por polling até atingir o estado
+   `completed` (~2 minutos, tempo consistente com o deploy anterior).
+8. **Revisão dos logs do build**: confirmado `next build` executado sem
+   erros no servidor da Hostinger, com manifesto de rotas idêntico ao
+   build local (mesmas páginas, mesmas rotas de API, mesmos tamanhos de
+   bundle).
 
-Assim que uma dessas credenciais/confirmações for fornecida, o deploy
-pode ser concluído imediatamente — o código já está pronto, buildado com
-sucesso, e commitado.
+### 15.9 Verificação da produção após o deploy
+
+Após o build remoto concluir, foram feitas as seguintes verificações
+diretamente contra `https://lazecca.com.br` (site real, não uma réplica
+local):
+
+- **Disponibilidade**: `curl https://lazecca.com.br/` → `HTTP 200`.
+- **Confirmação de que o novo código está no ar**: o hash do bundle CSS
+  servido em produção (`5e6b1d0cd988abb6.css`) é **idêntico** ao hash
+  gerado pelo build local usado nos testes de responsividade desta
+  sessão — prova de que o código com a correção do menu hambúrguer e do
+  CSP está de fato ativo em produção.
+- **Conectividade com o banco de dados**: `GET /api/products` retornou
+  `HTTP 200` com payload de 340.417 bytes contendo 135 peças reais
+  (ex.: `"1 Cruzeiro · 1944"`, `id: "C0001"`); `GET /api/categories`
+  retornou as 4 categorias esperadas (`Cédulas Brasileiras: 135`,
+  `Moedas Brasileiras`, `Moedas Estrangeiras`, `Acessórios`). Confirma que
+  o rebuild não afetou a conexão com o MySQL de produção.
+- **Teste funcional do menu mobile na produção real** (Playwright,
+  emulação iPhone 13, contra `https://lazecca.com.br` diretamente):
+  - Botão hambúrguer (`.nav-toggle`) localizado e clicado com sucesso.
+  - Drawer abriu corrigido: `{ w: 320, h: 664, top: 0, left: 70 }`,
+    ocupando a altura total do viewport (`664px`, igual ao viewport do
+    iPhone 13) — confirma que a correção via `createPortal` está ativa
+    (o drawer não está mais limitado à altura do header).
+  - Overlay corretamente cobrindo `{ w: 390, h: 664, top: 0, left: 0 }`
+    (viewport completo).
+  - `drawer.parentElement.tagName === "BODY"` — confirma que o portal
+    está renderizando o drawer diretamente em `document.body`, fora da
+    árvore do `<header>`, como projetado.
+  - `document.body` com `overflow: hidden` enquanto o drawer está aberto
+    (scroll lock funcionando).
+  - Os 6 links do menu (`Início`, `Catálogo`, `Diário`, `Sobre`,
+    `Autenticidade`, `Contato`) foram extraídos e validados.
+  - Clique no link "Catálogo" navegou corretamente para
+    `https://lazecca.com.br/catalogo` (confirmado por
+    `page.waitForURL` e pelo título da página:
+    `"Catálogo · La Zecca Numismática"`), e o drawer fechou
+    automaticamente após a navegação (classe voltou de
+    `"nav-drawer is-open"` para `"nav-drawer"`).
+  - Capturas de tela confirmam visualmente: menu fechado (header
+    elegante, inalterado), menu aberto (drawer "MENU" com os 6 itens,
+    rodapé com telefone e "Minha Conta", estética consistente com o
+    design desktop).
+
+**Conclusão**: o deploy em produção foi concluído com sucesso e
+totalmente verificado — tanto a nível de infraestrutura (build sem
+erros, site respondendo) quanto a nível funcional (menu mobile
+funcionando corretamente no site real, dados do banco intactos).
+
+**Recomendação de segurança**: como o token de API da Hostinger foi
+compartilhado em texto plano nesta conversa, recomenda-se fortemente que
+o usuário **revogue/rotacione esse token** em
+`hpanel.hostinger.com` → API assim que possível, gerando um novo token
+caso precise de acesso futuro por API (a mesma recomendação já havia sido
+feita para o token usado na Seção 11.3).
