@@ -3,7 +3,7 @@ import { getVisibleProducts, getCategories, getFiltros, getPriceRange } from '@/
 import CatalogClient from './CatalogClient';
 
 export const metadata = {
-  title: 'Catálogo · Lazecca Numismática',
+  title: 'Catálogo',
   description: 'Explore todo o acervo de cédulas e moedas autenticadas da La Zecca. Filtre por denominação, ano, estado de conservação e preço.',
 };
 

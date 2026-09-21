@@ -6,7 +6,7 @@ import Icon from '@/components/Icon';
 import { CONTACT } from '@/lib/config';
 
 export const metadata = {
-  title: 'Sobre · Lazecca Numismática',
+  title: 'Sobre',
   description: 'A história da La Zecca e do Dr. Sergio Costa — 27 anos de curadoria numismática em Fortaleza/CE.',
 };
 

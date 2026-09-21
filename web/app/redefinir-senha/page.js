@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import ResetPasswordClient from './ResetPasswordClient';
 
 export const metadata = {
-  title: 'Redefinir senha · La Zecca Numismática',
+  title: 'Redefinir senha',
 };
 
 export default function ResetPasswordPage() {
