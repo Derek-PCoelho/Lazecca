@@ -191,7 +191,7 @@ export default function SobrePage() {
             <Link href="/contato" className="btn btn-gold btn-lg">
               Falar com o Dr. Sergio
             </Link>
-            <a href={CONTACT.phoneHref} className="btn btn-outline btn-lg" style={{ color: 'var(--gold-500)', borderColor: 'var(--gold-700)' }}>
+            <a href={CONTACT.whatsappHref} target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-lg" style={{ color: 'var(--gold-500)', borderColor: 'var(--gold-700)' }}>
               <Icon name="phone" size={16} /> {CONTACT.phoneDisplay}
             </a>
           </div>

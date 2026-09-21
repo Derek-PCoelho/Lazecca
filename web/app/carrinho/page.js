@@ -9,6 +9,7 @@ import Icon from '@/components/Icon';
 import { formatPrice } from '@/lib/data';
 import { getCartItems, removeFromCart, updateQty, CART_CHANGED_EVENT } from '@/lib/cart';
 import { PIX_DISCOUNT_RATE, getShippingPrice, INSTALLMENTS_MAX } from '@/lib/config';
+import { formatCep, validateCepFormat } from '@/lib/validation';
 
 // Recriado literalmente de design_files/cart.html
 // Melhoria 5: REMOVIDO o useEffect que fazia LZ.addToCart('p001') + LZ.addToCart('p004', 2)
@@ -16,6 +17,17 @@ import { PIX_DISCOUNT_RATE, getShippingPrice, INSTALLMENTS_MAX } from '@/lib/con
 export default function CartPage() {
   const [items, setItems] = useState([]);
   const [stockWarning, setStockWarning] = useState('');
+
+  // Correção (auditoria pós-lançamento): o bloco "Calcular frete" era um
+  // input decorativo sem onChange/onSubmit — digitar um CEP não fazia nada,
+  // e o resumo sempre mostrava o valor fixo da tabela local (PAC, R$ 24,90)
+  // como "estimativa". Agora o campo chama a mesma API real de frete usada
+  // no checkout (/api/shipping/calculate) e, quando o cliente calcula com
+  // sucesso, o valor real (por CEP) substitui a estimativa no resumo.
+  const [cep, setCep] = useState('');
+  const [cepShipping, setCepShipping] = useState(null); // { price, name, days } | null
+  const [cepError, setCepError] = useState('');
+  const [cepLoading, setCepLoading] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -29,12 +41,54 @@ export default function CartPage() {
   }, []);
 
   const subtotal = items.reduce((s, i) => s + i.product.price * i.qty, 0);
-  // Frete estimado exibido no carrinho usa a modalidade padrão (PAC); o cálculo final
-  // por transportadora acontece no checkout (Melhoria 6).
-  const shipping = getShippingPrice('pac', subtotal);
+  // Frete estimado (tabela local, modalidade PAC) — usado como valor inicial
+  // até o cliente calcular pelo CEP real; o cálculo final por transportadora
+  // acontece de novo no checkout (Melhoria 6), que é sempre a fonte de verdade.
+  const shippingEstimate = getShippingPrice('pac', subtotal);
+  const shipping = cepShipping ? cepShipping.price : shippingEstimate;
   const discount = 0;
   const total = subtotal + shipping - discount;
   const pixPrice = total * (1 - PIX_DISCOUNT_RATE);
+
+  // Correção: antes o campo de CEP no resumo não fazia nada. Agora chama a
+  // mesma API real de frete usada no checkout (/api/shipping/calculate),
+  // usando o peso de cada item do carrinho.
+  const handleCalcularFrete = async (e) => {
+    e.preventDefault();
+    setCepError('');
+    const check = validateCepFormat(cep);
+    if (!check.valid) {
+      setCepError(check.reason);
+      return;
+    }
+    setCepLoading(true);
+    setCepShipping(null);
+    try {
+      const res = await fetch('/api/shipping/calculate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cep,
+          subtotal,
+          items: items.map((i) => ({ weightGrams: i.product.weightGrams, quantity: i.qty })),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !Array.isArray(data.options) || data.options.length === 0) {
+        setCepError(data.error || 'Não foi possível calcular o frete para este CEP.');
+        return;
+      }
+      // No resumo do carrinho mostramos a opção PAC (a mesma modalidade padrão
+      // já usada na estimativa) quando disponível; senão, a mais barata.
+      const pac = data.options.find((o) => o.id === 'pac' || /pac/i.test(o.name));
+      const chosen = pac || data.options.sort((a, b) => a.price - b.price)[0];
+      setCepShipping(chosen);
+    } catch {
+      setCepError('Erro de conexão. Tente novamente.');
+    } finally {
+      setCepLoading(false);
+    }
+  };
 
   const remove = (cartItemId) => removeFromCart(cartItemId);
   const upd = async (cartItemId, qty, product) => {
@@ -146,7 +200,7 @@ export default function CartPage() {
                   <span>{formatPrice(subtotal)}</span>
                 </div>
                 <div className="summary-row">
-                  <span>Frete (estimado)</span>
+                  <span>{cepShipping ? `Frete (${cepShipping.name})` : 'Frete (estimado)'}</span>
                   <span>{shipping === 0 ? <span style={{ color: 'var(--success)', fontWeight: 600 }}>Grátis</span> : formatPrice(shipping)}</span>
                 </div>
                 {discount > 0 && (
@@ -158,10 +212,24 @@ export default function CartPage() {
 
                 <div className="cep-block">
                   <label>Calcular frete</label>
-                  <div className="cep-form">
-                    <input placeholder="00000-000" />
-                    <button className="btn btn-ghost btn-sm">OK</button>
-                  </div>
+                  <form className="cep-form" onSubmit={handleCalcularFrete}>
+                    <input
+                      placeholder="00000-000"
+                      value={cep}
+                      onChange={(e) => setCep(formatCep(e.target.value))}
+                      inputMode="numeric"
+                      aria-label="CEP para calcular o frete"
+                    />
+                    <button className="btn btn-ghost btn-sm" type="submit" disabled={cepLoading}>
+                      {cepLoading ? '...' : 'OK'}
+                    </button>
+                  </form>
+                  {cepError && <p style={{ color: 'var(--danger)', fontSize: 12, marginTop: 6 }}>{cepError}</p>}
+                  {cepShipping && (
+                    <p style={{ color: 'var(--success)', fontSize: 12, marginTop: 6 }}>
+                      {cepShipping.name} · {cepShipping.days} · {cepShipping.price === 0 ? 'Grátis' : formatPrice(cepShipping.price)}
+                    </p>
+                  )}
                 </div>
 
                 <div className="summary-row total">

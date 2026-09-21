@@ -80,12 +80,51 @@ export default function CheckoutPage() {
     fetch('/api/auth/me')
       .then((res) => res.json())
       .then((data) => {
-        if (mounted) {
-          setAuthUser(data.user || null);
-          setAuthChecked(true);
+        if (!mounted) return;
+        const user = data.user || null;
+        setAuthUser(user);
+        setAuthChecked(true);
+        // Correção (auditoria pós-lançamento): o cliente cadastra nome, CPF,
+        // e-mail e telefone na própria conta, mas o checkout sempre pedia
+        // para digitar tudo de novo do zero. Agora pré-preenchemos os campos
+        // de identificação com os dados já salvos na conta — o cliente pode
+        // editar livremente se quiser usar outro nome/telefone na compra.
+        if (user) {
+          setForm((f) => ({
+            ...f,
+            nome: f.nome || [user.firstName, user.lastName].filter(Boolean).join(' '),
+            cpf: f.cpf || (user.cpf ? formatCpf(user.cpf) : ''),
+            email: f.email || user.email || '',
+            telefone: f.telefone || (user.phone ? formatPhone(user.phone) : ''),
+          }));
         }
       })
       .catch(() => mounted && setAuthChecked(true));
+
+    // Mesma lógica para o ENDEREÇO: se o cliente já tem um endereço salvo em
+    // "Minha Conta" (marcado como padrão, ou o primeiro cadastrado), usamos
+    // esses dados para pré-preencher a etapa de entrega — evita ter que
+    // digitar o mesmo endereço de novo em toda compra.
+    fetch('/api/addresses')
+      .then((res) => res.json())
+      .then((data) => {
+        if (!mounted) return;
+        const addresses = data.addresses || [];
+        const chosen = addresses.find((a) => a.isDefault) || addresses[0];
+        if (chosen) {
+          setForm((f) => ({
+            ...f,
+            cep: f.cep || formatCep(chosen.zipCode || ''),
+            rua: f.rua || chosen.street || '',
+            numero: f.numero || chosen.number || '',
+            complemento: f.complemento || chosen.complement || '',
+            bairro: f.bairro || chosen.neighborhood || '',
+            cidade: f.cidade || chosen.city || '',
+            estado: chosen.state || f.estado,
+          }));
+        }
+      })
+      .catch(() => {});
 
     return () => {
       mounted = false;
