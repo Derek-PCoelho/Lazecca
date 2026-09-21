@@ -9,6 +9,24 @@ const SITE_TITLE = 'La Zecca Numismática';
 const SITE_DESCRIPTION =
   'La Zecca — numismática de curadoria desde 1998. Cédulas e moedas antigas autenticadas, apresentadas pelo Dr. Sergio Costa.';
 
+// Cache-buster para os ícones da aba do navegador. Navegadores (Chrome,
+// Firefox, Safari) cacheiam favicon.ico/PNGs de forma muito agressiva por
+// domínio — às vezes por semanas — ignorando os headers HTTP normais de
+// cache. Anexar uma query string única em cada troca de favicon força o
+// navegador a buscar o arquivo novo em vez de reusar a versão antiga já
+// salva localmente. Alterar este valor sempre que o arquivo de favicon for
+// substituído novamente no futuro.
+//
+// IMPORTANTE: favicon.ico foi movido de app/favicon.ico para
+// public/favicon.ico. O Next.js App Router injeta automaticamente um
+// <link rel="icon" href="/favicon.ico"> (sem query string) sempre que
+// existe um app/favicon.ico — essa tag automática vem ANTES da nossa tag
+// versionada no <head>, e os navegadores usam a primeira ocorrência, o
+// que anulava silenciosamente este cache-buster. Servindo o arquivo a
+// partir de public/ em vez da convenção de arquivo do App Router, apenas
+// as tags declaradas abaixo (com ?v=) são renderizadas.
+const FAVICON_VERSION = 'v3';
+
 // Fontes carregadas via Google Fonts CDN (idêntico ao protótipo), preservando
 // preconnect para fonts.googleapis.com / fonts.gstatic.com.
 export const metadata = {
@@ -20,12 +38,13 @@ export const metadata = {
   description: SITE_DESCRIPTION,
   icons: {
     icon: [
-      { url: '/assets/favicon-32.png', sizes: '32x32', type: 'image/png' },
-      { url: '/assets/favicon-48.png', sizes: '48x48', type: 'image/png' },
-      { url: '/assets/favicon-180.png', sizes: '180x180', type: 'image/png' },
+      { url: `/favicon.ico?${FAVICON_VERSION}`, sizes: '16x16', type: 'image/x-icon' },
+      { url: `/assets/favicon-32.png?${FAVICON_VERSION}`, sizes: '32x32', type: 'image/png' },
+      { url: `/assets/favicon-48.png?${FAVICON_VERSION}`, sizes: '48x48', type: 'image/png' },
+      { url: `/assets/favicon-180.png?${FAVICON_VERSION}`, sizes: '180x180', type: 'image/png' },
     ],
-    apple: [{ url: '/assets/favicon-180.png', sizes: '180x180', type: 'image/png' }],
-    shortcut: '/assets/favicon-48.png',
+    apple: [{ url: `/assets/favicon-180.png?${FAVICON_VERSION}`, sizes: '180x180', type: 'image/png' }],
+    shortcut: `/assets/favicon-48.png?${FAVICON_VERSION}`,
   },
   openGraph: {
     type: 'website',
