@@ -5,6 +5,8 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import PasswordStrengthHints from '@/components/PasswordStrengthHints';
+import { validatePasswordStrength } from '@/lib/validation';
 
 export default function ResetPasswordClient() {
   const params = useSearchParams();
@@ -18,8 +20,9 @@ export default function ResetPasswordClient() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    if (password.length < 8) {
-      setError('A senha deve ter no mínimo 8 caracteres.');
+    const check = validatePasswordStrength(password);
+    if (!check.valid) {
+      setError(`Senha não atende aos critérios: ${check.failures.join(' ')}`);
       return;
     }
     if (password !== confirm) {
@@ -64,7 +67,8 @@ export default function ResetPasswordClient() {
             {error && <p style={{ color: 'var(--danger)', fontSize: 13, marginBottom: 12 }}>{error}</p>}
             <div className="field">
               <label>Nova senha</label>
-              <input type="password" required placeholder="Mínimo 8 caracteres" value={password} onChange={(e) => setPassword(e.target.value)} />
+              <input type="password" required placeholder="Mínimo 12 caracteres" value={password} onChange={(e) => setPassword(e.target.value)} />
+              <PasswordStrengthHints password={password} />
             </div>
             <div className="field">
               <label>Confirmar nova senha</label>

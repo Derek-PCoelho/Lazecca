@@ -6,19 +6,26 @@ import Image from 'next/image';
 import Icon from '@/components/Icon';
 import { formatPrice } from '@/lib/data';
 import { getCartItems, CART_CHANGED_EVENT } from '@/lib/cart';
-import { PIX_DISCOUNT_RATE, SHIPPING_METHODS, getShippingPrice, INSTALLMENTS_MAX } from '@/lib/config';
+import { PIX_DISCOUNT_RATE, INSTALLMENTS_MAX } from '@/lib/config';
+import { validateCpf, validateEmail, validatePhone, validateCepFormat, formatCpf, formatPhone, formatCep } from '@/lib/validation';
 
 // Recriado literalmente de design_files/checkout.html
 // Melhoria 5: REMOVIDO o useEffect que auto-preenchia p001/p004 quando o carrinho estava vazio.
 // Melhoria 2: navegação real por estado entre as 4 etapas (antes exibidas simultaneamente),
 //   com validação básica de campos obrigatórios por etapa e ação real (simulada) no botão
 //   "Concluir Pedido" — gera número de pedido e mostra tela de confirmação.
-// Melhoria 6: frete funcional por transportadora — cada modalidade tem preço/prazo próprios,
-//   mantendo a regra de frete grátis acima de R$500 como uma das condições possíveis.
-// Nota de arquitetura (Fase 0, seção 8): como o projeto foi exportado como site estático
-// (`output: 'export'`, ver next.config.mjs), esta finalização é 100% client-side — não há
-// API route de servidor processando pagamento real. Em um ambiente com Node.js habilitado,
-// o botão "Concluir Pedido" chamaria uma API route que integraria com um gateway de pagamento.
+// Bloco 1 (auditoria pós-lançamento): o frete deixou de usar a tabela fixa local
+//   (getShippingPrice/SHIPPING_METHODS) — agora é calculado de fato chamando
+//   /api/shipping/calculate (que usa Melhor Envio quando configurado, ou a tabela
+//   de fallback no servidor) no momento em que o CEP é confirmado, exibindo preço
+//   e prazo reais antes da confirmação do pedido.
+// Nota de arquitetura: o pedido é processado via API route real (/api/orders), que
+// recalcula preço/frete/desconto inteiramente no servidor a partir do banco — o
+// valor exibido aqui é sempre uma prévia, nunca a fonte de verdade do cobrado.
+
+// Formatação automática (Bloco 6) enquanto o usuário digita: aceita com ou
+// sem pontuação, mas exibe sempre formatado no campo.
+const FIELD_FORMATTERS = { cpf: formatCpf, telefone: formatPhone, cep: formatCep };
 
 const STEPS = [
   { key: 'identificacao', num: 1, label: 'Identificação & Entrega' },
@@ -30,7 +37,10 @@ export default function CheckoutPage() {
   const [items, setItems] = useState([]);
   const [step, setStep] = useState('identificacao');
   const [payment, setPayment] = useState('pix');
-  const [shippingMethod, setShippingMethod] = useState('pac');
+  const [shippingMethod, setShippingMethod] = useState('');
+  const [shippingOptions, setShippingOptions] = useState([]);
+  const [shippingLoading, setShippingLoading] = useState(false);
+  const [shippingError, setShippingError] = useState('');
   const [errors, setErrors] = useState({});
   const [orderNumber, setOrderNumber] = useState('');
 
@@ -61,19 +71,89 @@ export default function CheckoutPage() {
   }, []);
 
   const subtotal = items.reduce((s, i) => s + i.product.price * i.qty, 0);
-  const shipping = useMemo(() => getShippingPrice(shippingMethod, subtotal), [shippingMethod, subtotal]);
+  const selectedShipping = shippingOptions.find((o) => o.id === shippingMethod);
+  const shipping = selectedShipping ? selectedShipping.price : 0;
   const discount = payment === 'pix' ? subtotal * PIX_DISCOUNT_RATE : 0;
   const total = subtotal + shipping - discount;
 
-  const setField = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
+  // Formatação automática (Bloco 6) enquanto o usuário digita: aceita com ou
+  // sem pontuação, mas exibe sempre formatado no campo.
+  const setField = (field) => (e) => {
+    const formatter = FIELD_FORMATTERS[field];
+    const value = formatter ? formatter(e.target.value) : e.target.value;
+    setForm((f) => ({ ...f, [field]: value }));
+  };
+
+  // Bloco 1: calcula o frete REAL (via /api/shipping/calculate) a partir do CEP
+  // informado e do peso real dos itens do carrinho — chamado quando o cliente
+  // confirma o endereço (transição Identificação -> Pagamento).
+  const fetchShippingOptions = async () => {
+    setShippingLoading(true);
+    setShippingError('');
+    try {
+      const res = await fetch('/api/shipping/calculate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cep: form.cep,
+          subtotal,
+          items: items.map((i) => ({ weightGrams: i.product.weightGrams, quantity: i.qty })),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !Array.isArray(data.options) || data.options.length === 0) {
+        setShippingError(data.error || 'Não foi possível calcular o frete para este CEP.');
+        setShippingOptions([]);
+        return false;
+      }
+      setShippingOptions(data.options);
+      // Mantém a seleção atual se ainda existir entre as novas opções; senão usa a primeira
+      setShippingMethod((current) => (data.options.some((o) => o.id === current) ? current : data.options[0].id));
+      return true;
+    } catch (err) {
+      setShippingError('Erro de conexão ao calcular o frete. Tente novamente.');
+      setShippingOptions([]);
+      return false;
+    } finally {
+      setShippingLoading(false);
+    }
+  };
 
   const validateIdentificacao = () => {
     const errs = {};
-    if (!form.nome.trim()) errs.nome = 'Informe seu nome completo';
-    if (!form.cpf.trim()) errs.cpf = 'Informe seu CPF';
-    if (!form.email.trim() || !form.email.includes('@')) errs.email = 'Informe um e-mail válido';
-    if (!form.telefone.trim()) errs.telefone = 'Informe seu telefone';
-    if (!form.cep.trim()) errs.cep = 'Informe o CEP';
+    if (!form.nome.trim()) {
+      errs.nome = 'Informe seu nome completo';
+    } else if (/^\d+$/.test(form.nome.replace(/\s+/g, ''))) {
+      errs.nome = 'Nome não pode conter apenas números';
+    }
+
+    if (!form.cpf.trim()) {
+      errs.cpf = 'Informe seu CPF';
+    } else {
+      const cpfCheck = validateCpf(form.cpf);
+      if (!cpfCheck.valid) errs.cpf = cpfCheck.reason;
+    }
+
+    if (!form.email.trim()) {
+      errs.email = 'Informe seu e-mail';
+    } else {
+      const emailCheck = validateEmail(form.email);
+      if (!emailCheck.valid) errs.email = emailCheck.reason;
+    }
+
+    if (!form.telefone.trim()) {
+      errs.telefone = 'Informe seu telefone';
+    } else {
+      const phoneCheck = validatePhone(form.telefone);
+      if (!phoneCheck.valid) errs.telefone = phoneCheck.reason;
+    }
+
+    if (!form.cep.trim()) {
+      errs.cep = 'Informe o CEP';
+    } else {
+      const cepCheck = validateCepFormat(form.cep);
+      if (!cepCheck.valid) errs.cep = cepCheck.reason;
+    }
     if (!form.rua.trim()) errs.rua = 'Informe a rua';
     if (!form.numero.trim()) errs.numero = 'Informe o número';
     if (!form.bairro.trim()) errs.bairro = 'Informe o bairro';
@@ -82,8 +162,10 @@ export default function CheckoutPage() {
     return Object.keys(errs).length === 0;
   };
 
-  const goToPagamento = () => {
-    if (validateIdentificacao()) setStep('pagamento');
+  const goToPagamento = async () => {
+    if (!validateIdentificacao()) return;
+    const ok = await fetchShippingOptions();
+    if (ok) setStep('pagamento');
   };
 
   const finalizarPedido = async () => {
@@ -178,7 +260,14 @@ export default function CheckoutPage() {
             <div className="checkout-layout">
               <div>
                 {step === 'identificacao' && (
-                  <IdentificacaoPanel form={form} setField={setField} errors={errors} onNext={goToPagamento} />
+                  <IdentificacaoPanel
+                    form={form}
+                    setField={setField}
+                    errors={errors}
+                    onNext={goToPagamento}
+                    shippingLoading={shippingLoading}
+                    shippingError={shippingError}
+                  />
                 )}
                 {step === 'pagamento' && (
                   <PagamentoPanel
@@ -212,19 +301,25 @@ export default function CheckoutPage() {
 
                 {step === 'identificacao' ? (
                   <div style={{ fontSize: 13, color: 'var(--ink-500)' }}>
-                    O frete será calculado com base na modalidade escolhida na etapa de Endereço.
+                    O frete real será calculado pelo CEP informado ao avançar para o pagamento.
                   </div>
                 ) : (
                   <>
                     <div className="field" style={{ marginBottom: 12 }}>
                       <label>Modalidade de envio</label>
-                      <select value={shippingMethod} onChange={(e) => setShippingMethod(e.target.value)}>
-                        {SHIPPING_METHODS.map((m) => (
-                          <option key={m.id} value={m.id}>
-                            {m.label} · {m.prazo} · {getShippingPrice(m.id, subtotal) === 0 ? 'Grátis' : formatPrice(getShippingPrice(m.id, subtotal))}
-                          </option>
-                        ))}
-                      </select>
+                      {shippingOptions.length > 0 ? (
+                        <select value={shippingMethod} onChange={(e) => setShippingMethod(e.target.value)}>
+                          {shippingOptions.map((o) => (
+                            <option key={o.id} value={o.id}>
+                              {o.name} · {o.days} · {o.price === 0 ? 'Grátis' : formatPrice(o.price)}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <div style={{ fontSize: 13, color: 'var(--danger)' }}>
+                          {shippingError || 'Não foi possível calcular o frete.'}
+                        </div>
+                      )}
                     </div>
                     <div style={{ borderTop: '1px solid var(--line-soft)', paddingTop: 12 }}>
                       <div className="summary-row">
@@ -256,7 +351,7 @@ export default function CheckoutPage() {
                       className="btn btn-primary btn-lg btn-block"
                       style={{ marginTop: 20 }}
                       onClick={finalizarPedido}
-                      disabled={submitting}
+                      disabled={submitting || shippingOptions.length === 0}
                     >
                       {submitting ? 'Processando...' : 'Concluir Pedido'} <Icon name="check" size={16} />
                     </button>
@@ -298,7 +393,12 @@ function CheckoutHeader() {
   );
 }
 
-function IdentificacaoPanel({ form, setField, errors, onNext }) {
+const BR_STATES = [
+  'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG',
+  'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO',
+];
+
+function IdentificacaoPanel({ form, setField, errors, onNext, shippingLoading, shippingError }) {
   return (
     <>
       <div className="checkout-panel">
@@ -378,15 +478,16 @@ function IdentificacaoPanel({ form, setField, errors, onNext }) {
           <div className="field">
             <label>Estado</label>
             <select value={form.estado} onChange={setField('estado')}>
-              <option>CE</option>
-              <option>SP</option>
-              <option>RJ</option>
-              <option>MG</option>
+              {BR_STATES.map((uf) => (
+                <option key={uf}>{uf}</option>
+              ))}
             </select>
           </div>
         </div>
-        <button className="btn btn-primary btn-lg" style={{ marginTop: 8 }} onClick={onNext}>
-          Continuar para Pagamento <Icon name="chevron-right" size={16} />
+        {shippingError && <ErrorText>{shippingError}</ErrorText>}
+        <button className="btn btn-primary btn-lg" style={{ marginTop: 8 }} onClick={onNext} disabled={shippingLoading}>
+          {shippingLoading ? 'Calculando frete...' : 'Continuar para Pagamento'}{' '}
+          {!shippingLoading && <Icon name="chevron-right" size={16} />}
         </button>
       </div>
     </>

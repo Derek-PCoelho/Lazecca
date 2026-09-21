@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { hashPassword } from '@/lib/auth';
+import { validatePasswordStrength } from '@/lib/validation';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,8 +11,12 @@ export async function POST(request) {
     if (!token || !password) {
       return NextResponse.json({ error: 'Token e nova senha são obrigatórios.' }, { status: 400 });
     }
-    if (password.length < 8) {
-      return NextResponse.json({ error: 'A senha deve ter no mínimo 8 caracteres.' }, { status: 400 });
+    const passwordCheck = validatePasswordStrength(password);
+    if (!passwordCheck.valid) {
+      return NextResponse.json(
+        { error: 'Senha não atende aos critérios de segurança.', failures: passwordCheck.failures },
+        { status: 400 }
+      );
     }
 
     const resetToken = await prisma.passwordResetToken.findUnique({ where: { token } });

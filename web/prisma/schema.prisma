@@ -170,7 +170,7 @@ model User {
   passwordHash String
   firstName    String
   lastName     String
-  cpf          String?
+  cpf          String?   @unique
   phone        String?
   role         UserRole  @default(CUSTOMER)
   isActive     Boolean   @default(true)

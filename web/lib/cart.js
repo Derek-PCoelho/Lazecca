@@ -34,6 +34,7 @@ export async function getCartItems() {
         year: i.year,
         state: i.state,
         certificate: i.certificate,
+        weightGrams: i.weightGrams,
       },
       cartItemId: i.id,
     }));
