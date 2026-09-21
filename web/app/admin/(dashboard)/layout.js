@@ -27,6 +27,9 @@ export default async function AdminDashboardLayout({ children }) {
         <div className="admin-user">
           <div>{user.firstName} {user.lastName}</div>
           <div className="admin-user-email">{user.email}</div>
+          <Link href="/admin/perfil" style={{ display: 'block', fontSize: 12, color: '#c9a24a', marginBottom: 10 }}>
+            Meu perfil / Trocar senha
+          </Link>
           <AdminLogoutButton />
         </div>
       </aside>

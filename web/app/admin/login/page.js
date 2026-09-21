@@ -7,6 +7,14 @@ export default function AdminLoginPage() {
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  // Funcionalidade: "Esqueci minha senha" do painel administrativo.
+  // Reaproveita o mesmo endpoint /api/auth/forgot-password já usado pela
+  // área de cliente (lib/mail.js + tabela password_reset_tokens), passando
+  // context: 'admin' para que o link de redefinição gerado leve de volta
+  // para /admin/login (ver app/redefinir-senha/ResetPasswordClient.js) e
+  // para só considerar contas com role ADMIN elegíveis.
+  const [forgotSent, setForgotSent] = useState(false);
+  const [forgotSubmitting, setForgotSubmitting] = useState(false);
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -35,6 +43,27 @@ export default function AdminLoginPage() {
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!form.email) {
+      setError('Digite seu e-mail no campo acima antes de clicar em "Esqueci minha senha".');
+      return;
+    }
+    setError('');
+    setForgotSubmitting(true);
+    try {
+      await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: form.email, context: 'admin' }),
+      });
+      setForgotSent(true);
+    } catch {
+      setError('Erro de conexão. Tente novamente.');
+    } finally {
+      setForgotSubmitting(false);
+    }
+  };
+
   return (
     <div className="admin-login-page">
       <div className="admin-login-card">
@@ -59,6 +88,19 @@ export default function AdminLoginPage() {
               value={form.password}
               onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
             />
+          </div>
+          <div style={{ textAlign: 'right', marginBottom: 16, marginTop: -8 }}>
+            <a
+              href="#"
+              onClick={(e) => { e.preventDefault(); handleForgotPassword(); }}
+              style={{ fontSize: 12, color: '#7a1f2b' }}
+            >
+              {forgotSubmitting
+                ? 'Enviando...'
+                : forgotSent
+                  ? 'Link enviado! Verifique seu e-mail.'
+                  : 'Esqueci minha senha'}
+            </a>
           </div>
           <button className="admin-btn" style={{ width: '100%' }} disabled={submitting}>
             {submitting ? 'Entrando...' : 'Entrar'}
