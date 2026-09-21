@@ -5,7 +5,8 @@ import BlogPostClient from './BlogPostClient';
 export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }) {
-  const post = await getPostBySlug(params.slug);
+  const { slug } = await params;
+  const post = await getPostBySlug(slug);
   if (!post) return { title: 'Artigo não encontrado' };
   return {
     title: post.title,
@@ -21,7 +22,8 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function BlogPostPage({ params }) {
-  const post = await getPostBySlug(params.slug);
+  const { slug } = await params;
+  const post = await getPostBySlug(slug);
   if (!post) notFound();
   const related = await getRelatedPosts(post, 3);
   const articleBody = post.contentHtml || '<p>Conteúdo em preparação.</p>';

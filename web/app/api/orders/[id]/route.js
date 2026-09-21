@@ -5,9 +5,10 @@ import { getCurrentUser } from '@/lib/auth';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request, { params }) {
+  const { id } = await params;
   const user = await getCurrentUser();
   const order = await prisma.order.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       items: { include: { product: { select: { slug: true, certificate: true, images: { take: 1, orderBy: { sortOrder: 'asc' } } } } } },
       payment: true,

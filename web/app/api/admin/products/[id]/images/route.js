@@ -19,11 +19,12 @@ const MAX_SIZE = 8 * 1024 * 1024; // 8MB por imagem
 
 // GET — lista imagens do produto (ordenadas)
 export async function GET(request, { params }) {
+  const { id } = await params;
   const auth = await requireAdmin();
   if (auth.error) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   const images = await prisma.productImage.findMany({
-    where: { productId: params.id },
+    where: { productId: id },
     orderBy: { sortOrder: 'asc' },
   });
   return NextResponse.json({ images });
@@ -31,11 +32,12 @@ export async function GET(request, { params }) {
 
 // POST — upload de uma nova imagem (multipart/form-data, campo "file")
 export async function POST(request, { params }) {
+  const { id } = await params;
   const auth = await requireAdmin();
   if (auth.error) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   try {
-    const product = await prisma.product.findUnique({ where: { id: params.id } });
+    const product = await prisma.product.findUnique({ where: { id } });
     if (!product) return NextResponse.json({ error: 'Produto não encontrado.' }, { status: 404 });
 
     const formData = await request.formData();
@@ -63,14 +65,14 @@ export async function POST(request, { params }) {
     await fs.writeFile(filePath, buffer);
 
     const maxSort = await prisma.productImage.aggregate({
-      where: { productId: params.id },
+      where: { productId: id },
       _max: { sortOrder: true },
     });
     const sortOrder = (maxSort._max.sortOrder ?? -1) + 1;
 
     const image = await prisma.productImage.create({
       data: {
-        productId: params.id,
+        productId: id,
         url: `${PUBLIC_PREFIX}/${filename}`,
         altText: product.name,
         sortOrder,
@@ -86,6 +88,7 @@ export async function POST(request, { params }) {
 
 // PATCH — reordena as imagens do produto. Body: { order: [imageId, imageId, ...] }
 export async function PATCH(request, { params }) {
+  const { id } = await params;
   const auth = await requireAdmin();
   if (auth.error) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
@@ -104,7 +107,7 @@ export async function PATCH(request, { params }) {
     );
 
     const images = await prisma.productImage.findMany({
-      where: { productId: params.id },
+      where: { productId: id },
       orderBy: { sortOrder: 'asc' },
     });
     return NextResponse.json({ images });

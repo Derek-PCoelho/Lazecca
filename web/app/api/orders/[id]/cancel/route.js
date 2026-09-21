@@ -27,11 +27,12 @@ const REGRET_PERIOD_DAYS = 7;
 const CANCELLABLE_STATUSES = ['AWAITING_PAYMENT', 'PAID', 'PROCESSING'];
 
 export async function POST(request, { params }) {
+  const { id } = await params;
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: 'Não autenticado.' }, { status: 401 });
 
   const order = await prisma.order.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: { items: true, payment: true },
   });
   if (!order) return NextResponse.json({ error: 'Pedido não encontrado.' }, { status: 404 });
