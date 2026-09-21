@@ -8,7 +8,8 @@ export const dynamic = 'force-dynamic';
 // vez de generateStaticParams + export estático — a página agora é renderizada
 // sob demanda pelo servidor Node.js (output: 'standalone').
 export async function generateMetadata({ params }) {
-  const product = await getProductBySlug(params.slug);
+  const { slug } = await params;
+  const product = await getProductBySlug(slug);
   if (!product) {
     return { title: 'Produto não encontrado' };
   }
@@ -64,7 +65,8 @@ function ProductJsonLd({ product }) {
 // Melhoria 8 — Tratamento de produto inexistente: qualquer slug sem produto
 // correspondente cai em not-found.js.
 export default async function ProductPage({ params }) {
-  const product = await getProductBySlug(params.slug);
+  const { slug } = await params;
+  const product = await getProductBySlug(slug);
   if (!product) {
     notFound();
   }

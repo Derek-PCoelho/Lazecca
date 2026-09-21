@@ -11,10 +11,11 @@ async function assertOwnership(userId, id) {
 }
 
 export async function PATCH(request, { params }) {
+  const { id } = await params;
   const auth = await requireAuth();
   if (auth.error) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
-  const existing = await assertOwnership(auth.user.id, params.id);
+  const existing = await assertOwnership(auth.user.id, id);
   if (!existing) return NextResponse.json({ error: 'Endereço não encontrado.' }, { status: 404 });
 
   try {
@@ -29,7 +30,7 @@ export async function PATCH(request, { params }) {
       await prisma.address.updateMany({ where: { userId: auth.user.id }, data: { isDefault: false } });
     }
 
-    const address = await prisma.address.update({ where: { id: params.id }, data });
+    const address = await prisma.address.update({ where: { id }, data });
     return NextResponse.json({ address });
   } catch (err) {
     console.error('[api/addresses/:id PATCH]', err);
@@ -38,13 +39,14 @@ export async function PATCH(request, { params }) {
 }
 
 export async function DELETE(request, { params }) {
+  const { id } = await params;
   const auth = await requireAuth();
   if (auth.error) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
-  const existing = await assertOwnership(auth.user.id, params.id);
+  const existing = await assertOwnership(auth.user.id, id);
   if (!existing) return NextResponse.json({ error: 'Endereço não encontrado.' }, { status: 404 });
 
-  await prisma.address.delete({ where: { id: params.id } });
+  await prisma.address.delete({ where: { id } });
 
   // Se apagou o endereço padrão e ainda restam outros, promove o mais recente.
   if (existing.isDefault) {

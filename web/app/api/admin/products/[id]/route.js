@@ -8,11 +8,12 @@ import path from 'path';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request, { params }) {
+  const { id } = await params;
   const auth = await requireAdmin();
   if (auth.error) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   const product = await prisma.product.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: { category: true, images: { orderBy: { sortOrder: 'asc' } } },
   });
   if (!product) return NextResponse.json({ error: 'Produto não encontrado.' }, { status: 404 });
@@ -20,6 +21,7 @@ export async function GET(request, { params }) {
 }
 
 export async function PATCH(request, { params }) {
+  const { id } = await params;
   const auth = await requireAdmin();
   if (auth.error) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
@@ -28,7 +30,7 @@ export async function PATCH(request, { params }) {
     const data = coerceProductData(body);
 
     const product = await prisma.product.update({
-      where: { id: params.id },
+      where: { id },
       data,
       include: { category: true, images: { orderBy: { sortOrder: 'asc' } } },
     });
@@ -44,12 +46,13 @@ export async function PATCH(request, { params }) {
 // imagens do acervo original (fora dessa pasta) NÃO são apagadas do disco,
 // apenas o registro no banco (evita apagar assets compartilhados por engano).
 export async function DELETE(request, { params }) {
+  const { id } = await params;
   const auth = await requireAdmin();
   if (auth.error) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   try {
     const product = await prisma.product.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { images: true },
     });
     if (!product) return NextResponse.json({ error: 'Produto não encontrado.' }, { status: 404 });
@@ -58,7 +61,7 @@ export async function DELETE(request, { params }) {
     // pedido) — apagar quebraria o histórico de pedidos (OrderItem.productId
     // é obrigatório e não tem onDelete: Cascade). Nesses casos, orientamos a
     // apenas desativar o produto (isActive=false) em vez de excluir.
-    const orderItemCount = await prisma.orderItem.count({ where: { productId: params.id } });
+    const orderItemCount = await prisma.orderItem.count({ where: { productId: id } });
     if (orderItemCount > 0) {
       return NextResponse.json(
         {
@@ -84,9 +87,9 @@ export async function DELETE(request, { params }) {
     // fechados, que usam OrderItem, bloqueado acima) e desvinculamos reviews
     // (mantidas como depoimento genérico, sem productId).
     await prisma.$transaction([
-      prisma.cartItem.deleteMany({ where: { productId: params.id } }),
-      prisma.review.updateMany({ where: { productId: params.id }, data: { productId: null } }),
-      prisma.product.delete({ where: { id: params.id } }),
+      prisma.cartItem.deleteMany({ where: { productId: id } }),
+      prisma.review.updateMany({ where: { productId: id }, data: { productId: null } }),
+      prisma.product.delete({ where: { id } }),
     ]);
     return NextResponse.json({ ok: true });
   } catch (err) {

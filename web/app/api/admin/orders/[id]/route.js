@@ -7,11 +7,12 @@ export const dynamic = 'force-dynamic';
 const VALID_STATUSES = ['AWAITING_PAYMENT', 'PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
 
 export async function GET(request, { params }) {
+  const { id } = await params;
   const auth = await requireAdmin();
   if (auth.error) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   const order = await prisma.order.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: { items: true, payment: true, user: true },
   });
   if (!order) return NextResponse.json({ error: 'Pedido não encontrado.' }, { status: 404 });
@@ -22,6 +23,7 @@ export async function GET(request, { params }) {
 // rastreio (exibido ao cliente em /conta/pedidos/[id]) e cancelar o pedido
 // pelo painel (devolvendo estoque das peças, igual ao fluxo do cliente).
 export async function PATCH(request, { params }) {
+  const { id } = await params;
   const auth = await requireAdmin();
   if (auth.error) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
@@ -32,7 +34,7 @@ export async function PATCH(request, { params }) {
     return NextResponse.json({ error: 'Status inválido.' }, { status: 400 });
   }
 
-  const existing = await prisma.order.findUnique({ where: { id: params.id }, include: { items: true, payment: true } });
+  const existing = await prisma.order.findUnique({ where: { id }, include: { items: true, payment: true } });
   if (!existing) return NextResponse.json({ error: 'Pedido não encontrado.' }, { status: 404 });
 
   const data = {};
@@ -47,7 +49,7 @@ export async function PATCH(request, { params }) {
         await tx.product.update({ where: { id: item.productId }, data: { stock: { increment: item.quantity } } });
       }
       const result = await tx.order.update({
-        where: { id: params.id },
+        where: { id },
         data: {
           ...data,
           status: 'CANCELLED',
@@ -57,7 +59,7 @@ export async function PATCH(request, { params }) {
         },
       });
       if (existing.payment) {
-        await tx.payment.update({ where: { orderId: params.id }, data: { status: wasPaid ? 'REFUNDED' : existing.payment.status } });
+        await tx.payment.update({ where: { orderId: id }, data: { status: wasPaid ? 'REFUNDED' : existing.payment.status } });
       }
       return result;
     });
@@ -65,6 +67,6 @@ export async function PATCH(request, { params }) {
   }
 
   if (status !== undefined) data.status = status;
-  const order = await prisma.order.update({ where: { id: params.id }, data });
+  const order = await prisma.order.update({ where: { id }, data });
   return NextResponse.json({ order });
 }

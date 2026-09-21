@@ -5,11 +5,12 @@ import { requireAuth } from '@/lib/auth';
 export const dynamic = 'force-dynamic';
 
 export async function DELETE(request, { params }) {
+  const { productId } = await params;
   const auth = await requireAuth();
   if (auth.error) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   const product = await prisma.product.findFirst({
-    where: { OR: [{ id: params.productId }, { legacyCode: params.productId }] },
+    where: { OR: [{ id: productId }, { legacyCode: productId }] },
   });
   if (!product) return NextResponse.json({ error: 'Produto não encontrado.' }, { status: 404 });
 
@@ -18,11 +19,12 @@ export async function DELETE(request, { params }) {
 }
 
 export async function GET(request, { params }) {
+  const { productId } = await params;
   const auth = await requireAuth();
   if (auth.error) return NextResponse.json({ favorited: false, error: auth.error }, { status: auth.status });
 
   const product = await prisma.product.findFirst({
-    where: { OR: [{ id: params.productId }, { legacyCode: params.productId }] },
+    where: { OR: [{ id: productId }, { legacyCode: productId }] },
   });
   if (!product) return NextResponse.json({ favorited: false });
 
