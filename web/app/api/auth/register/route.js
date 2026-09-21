@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { hashPassword, signSession, setSessionCookie } from '@/lib/auth';
+import { mergeGuestCartIntoUser } from '@/lib/cartServer';
 import {
   validateFullName,
   validateEmail,
@@ -97,6 +98,10 @@ export async function POST(request) {
 
     const token = signSession(user);
     await setSessionCookie(token);
+
+    // Migra o carrinho de convidado (se existir) para o carrinho deste
+    // usuário recém-cadastrado — ver lib/cartServer.js.
+    await mergeGuestCartIntoUser(user.id);
 
     // Nunca retornar passwordHash em nenhuma resposta de API.
     return NextResponse.json({

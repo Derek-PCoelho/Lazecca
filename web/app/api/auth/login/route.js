@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyPassword, signSession, setSessionCookie } from '@/lib/auth';
 import { checkRateLimit, getClientIp } from '@/lib/rateLimit';
+import { mergeGuestCartIntoUser } from '@/lib/cartServer';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,6 +39,10 @@ export async function POST(request) {
 
     const token = signSession(user);
     await setSessionCookie(token);
+
+    // Migra o carrinho de convidado (se existir) para o carrinho deste
+    // usuário agora que a sessão está ativa — ver lib/cartServer.js.
+    await mergeGuestCartIntoUser(user.id);
 
     return NextResponse.json({
       user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName, role: user.role },
