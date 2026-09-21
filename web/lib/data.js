@@ -83,6 +83,7 @@ function mapPost(post) {
     title: post.title,
     excerpt: post.excerpt,
     date: post.displayDate,
+    publishedAt: post.publishedAt,
     readTime: post.readTime,
     category: post.category,
     cover: post.coverImage,

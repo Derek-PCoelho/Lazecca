@@ -24,6 +24,7 @@ export const metadata = {
   title: 'Política de Privacidade',
   description:
     'Como a La Zecca Numismática coleta, usa, armazena e protege os dados pessoais de clientes e visitantes, em conformidade com a LGPD.',
+  alternates: { canonical: '/politica-de-privacidade' },
 };
 
 const SECTION_STYLE = { marginTop: 32 };

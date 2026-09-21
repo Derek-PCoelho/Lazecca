@@ -3,8 +3,14 @@ import { getVisibleProducts, getCategories, getFiltros, getPriceRange } from '@/
 import CatalogClient from './CatalogClient';
 
 export const metadata = {
-  title: 'Catálogo',
-  description: 'Explore todo o acervo de cédulas e moedas autenticadas da La Zecca. Filtre por denominação, ano, estado de conservação e preço.',
+  title: 'Catálogo de Cédulas e Moedas Antigas',
+  description: 'Explore o acervo completo de cédulas e moedas antigas autenticadas da La Zecca Numismática, em Fortaleza/CE. Filtre por denominação, ano, estado de conservação e preço para colecionismo.',
+  alternates: { canonical: '/catalogo' },
+  openGraph: {
+    title: 'Catálogo de Cédulas e Moedas Antigas · La Zecca Numismática',
+    description: 'Explore o acervo completo de cédulas e moedas antigas autenticadas da La Zecca Numismática, em Fortaleza/CE.',
+    url: '/catalogo',
+  },
 };
 
 export const dynamic = 'force-dynamic';

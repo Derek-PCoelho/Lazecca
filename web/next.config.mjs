@@ -59,6 +59,29 @@ const nextConfig = {
       },
     ];
   },
+  // SEO — canonicalização www -> non-www. O DNS da Hostinger resolve tanto
+  // "lazecca.com.br" (ALIAS) quanto "www.lazecca.com.br" (CNAME) para o mesmo
+  // app, então sem este redirect o Google via os dois hosts como conteúdo
+  // duplicado (ambos HTTP 200, mesmo HTML, sem canonical/redirect entre eles).
+  // A versão "www" foi escolhida como não-oficial e passa a redirecionar
+  // permanentemente (301) para o domínio raiz, que é a versão usada em todo o
+  // site (metadataBase, JSON-LD, canonical tags, sitemap.xml).
+  //
+  // O destino é um valor ESTÁTICO fixo (não deriva do host da requisição nem
+  // de nenhum dado controlado pelo cliente) — isso é importante para não
+  // reintroduzir o mesmo padrão de vulnerabilidade do CVE-2026-64645 (SSRF via
+  // hostname de destino dinâmico em rewrites/redirects), que exige
+  // especificamente que o destino seja atacante-controlável; aqui não é.
+  async redirects() {
+    return [
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'www.lazecca.com.br' }],
+        destination: 'https://lazecca.com.br/:path*',
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

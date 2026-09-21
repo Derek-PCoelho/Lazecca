@@ -17,8 +17,14 @@ import { CONTACT } from '@/lib/config';
 // =============================================================================
 
 export const metadata = {
-  title: 'Como Chegar',
-  description: 'Como chegar à La Zecca Numismática, no Centro de Fortaleza/CE — endereço, mapa, pontos de referência e opções de estacionamento.',
+  title: 'Como Chegar · Loja em Fortaleza/CE',
+  description: 'Como chegar à La Zecca Numismática, no Centro de Fortaleza/CE — endereço, mapa, pontos de referência e opções de estacionamento para visitar nossa loja de cédulas e moedas antigas.',
+  alternates: { canonical: '/como-chegar' },
+  openGraph: {
+    title: 'Como Chegar à La Zecca Numismática (Centro de Fortaleza/CE)',
+    description: 'Endereço, mapa, pontos de referência e estacionamento para visitar a loja da La Zecca Numismática no Centro de Fortaleza/CE.',
+    url: '/como-chegar',
+  },
 };
 
 const REFERENCE_POINTS = [
