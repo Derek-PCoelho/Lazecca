@@ -719,3 +719,149 @@ decremento de estoque era esperado.
 
 `next build` reverificado com sucesso após as alterações (todas as rotas
 de carrinho continuam listadas no manifesto, nenhum erro de compilação).
+
+---
+
+## 15. Fase 12 — Responsividade mobile (menu/navbar) + correção de bug de CSP
+
+Trabalho solicitado: revisar e corrigir a responsividade mobile (menu,
+navbar, etc.), preservando 100% do layout desktop, e em seguida atualizar
+o Pull Request e publicar em produção (Hostinger).
+
+### 15.1 Metodologia de teste
+
+Como o site roda em produção como `output: 'standalone'` (servidor Node.js
+real, não export estático), os testes mobile foram feitos contra esse
+mesmo modo de execução (`next build` + `node .next/standalone/server.js`),
+conectado ao banco de dados MySQL real da Hostinger — e não contra
+`next dev` ou `next start`, que não refletem fielmente o ambiente de
+produção (`next start` inclusive emite aviso de incompatibilidade com
+`output: standalone`).
+
+Ferramenta de teste: Playwright com emulação de dispositivo `iPhone 13`
+(390×844 CSS px), instalado ad-hoc via `npx playwright install chromium`
+(não adicionado como dependência do projeto). Foram usados: capturas de
+tela de viewport único, tela cheia, e captura de console
+(`PlaywrightConsoleCapture`) para detectar erros JS/CSP.
+
+### 15.2 Bug encontrado e corrigido: CSP bloqueando Google Fonts
+
+Durante a primeira captura de console no mobile, foi detectado um erro
+real de produção, **não específico de mobile** (afeta todos os
+dispositivos): o cabeçalho `Content-Security-Policy` definido em
+`next.config.mjs` não incluía os domínios do Google Fonts, bloqueando o
+carregamento da folha de estilo (`fonts.googleapis.com`) e dos arquivos de
+fonte (`fonts.gstatic.com`). Na prática, isso fazia o site cair para
+fontes padrão do sistema em vez das fontes de marca (serif/display
+configuradas em `:root`).
+
+**Correção**: adicionados `https://fonts.googleapis.com` a `style-src` e
+`https://fonts.gstatic.com` a `font-src`. Verificado que o erro de console
+desaparece após a correção.
+
+### 15.3 Bug encontrado e corrigido: menu principal quebrando em 2-3 linhas no mobile
+
+A nav horizontal (`.nav-primary`, 6 links: Início, Catálogo, Diário,
+Sobre, Autenticidade, Contato) só tinha overflow horizontal como ajuste
+mobile (`@media (max-width: 900px)`), o que resultava em itens quebrando
+em 2-3 linhas dentro do cabeçalho, inflando bastante a altura do header
+fixo em telas estreitas.
+
+**Correção implementada** (`components/Header.js` + `app/globals.css`):
+
+- Botão hambúrguer (reaproveitando os ícones `menu`/`x` já existentes em
+  `components/Icon.js`, nenhum ícone novo foi necessário), visível apenas
+  em `@media (max-width: 900px)` via `.nav-toggle { display: none }` por
+  padrão, sobrescrito para `inline-flex` dentro do media query.
+- Drawer lateral deslizante (`.nav-drawer`) com os mesmos 6 links em lista
+  vertical, mais atalhos para "Minha Conta" e telefone de contato.
+- A nav horizontal original (`.nav-primary`) passa a ter
+  `display: none` **apenas dentro do mesmo media query de 900px** —
+  acima disso o CSS original permanece 100% intacto, sem nenhuma
+  alteração de seletor de desktop.
+- **Detalhe técnico importante**: o drawer e o overlay são renderizados
+  via `createPortal(..., document.body)` em vez de ficarem aninhados
+  dentro de `<header>`. Isso foi necessário porque `.site-header` usa
+  `backdrop-filter` (efeito de vidro fosco), que em CSS cria um novo
+  "containing block" para elementos `position: fixed` descendentes — sem
+  o portal, o drawer/overlay ficavam restritos à altura do cabeçalho em
+  vez de cobrir a tela inteira. Confirmado por medição de
+  `getBoundingClientRect()` antes/depois da correção.
+- Comportamento adicional: fecha automaticamente ao navegar para outra
+  rota, ao clicar no overlay escuro, ou ao pressionar Esc; trava o scroll
+  do `body` enquanto aberto (evita rolagem "atrás" do drawer).
+
+### 15.4 Investigação de suspeita de bug (não confirmada — falso positivo)
+
+Uma primeira captura de tela de página inteira (`fullPage`) no mobile
+sugeria um "espaço vazio" muito grande entre a seção Hero e o rodapé.
+Investigação revelou que **não é um bug real**: as animações de entrada
+ao rolar a página (`.reveal`/`.reveal-stagger`, implementadas via
+`IntersectionObserver` em `lib/useReveal.js`) só ativam com eventos de
+scroll genuínos do navegador — uma captura `fullPage` de página inteira
+redimensiona o viewport sem rolar de fato, deixando o conteúdo abaixo da
+dobra em `opacity: 0` só no print. Confirmado renderizando com simulação
+de scroll incremental (`window.scrollTo` em passos + espera): todas as
+seções aparecem corretamente, sem espaço vazio real. **Nenhuma alteração
+de código foi necessária/feita para este item.**
+
+### 15.5 Verificação — zero impacto no layout desktop
+
+Testado em viewport desktop (1440×900):
+- `.nav-toggle` (botão hambúrguer): `display: none` — confirmado ausente
+  visualmente e via `getComputedStyle`.
+- `.nav-primary` (nav horizontal original): `display: block` — presente e
+  idêntica ao layout anterior.
+- Screenshot do cabeçalho desktop comparado visualmente: idêntico ao
+  estado anterior às mudanças (mesma disposição de logo, busca, ícones e
+  nav horizontal).
+
+### 15.6 Páginas testadas no mobile (visual)
+
+Como o cabeçalho é compartilhado (`components/Header.js`), a correção se
+propaga automaticamente a todas as páginas que o utilizam. Capturas de
+tela confirmaram cabeçalho compacto e funcional (sem quebra de linha) em:
+`/` (home), `/catalogo`, `/carrinho`, `/conta`, `/sobre`, `/contato`,
+`/produto/[slug]`. A página `/checkout` usa um cabeçalho minimalista
+próprio (sem nav principal, por design) e não foi alterada.
+
+Bug cosmético pré-existente **não relacionado a esta tarefa** foi
+observado no texto do carrinho vazio (interpolação de contagem exibindo
+"o peças" em vez de "0 peças"); não corrigido nesta rodada por estar fora
+do escopo (responsividade mobile) e não ser uma regressão introduzida por
+este trabalho.
+
+### 15.7 Build e commit
+
+`next build` executado com sucesso após as alterações. Commit único
+(`fix(mobile): CSP Google Fonts bug + hamburger menu drawer for mobile
+nav`) criado na branch `genspark_ai_developer`, rebaseado sobre
+`origin/main` (que já continha o merge do PR #6 do bloco anterior) sem
+conflitos, e enviado ao GitHub.
+
+### 15.8 Deploy em produção (Hostinger) — bloqueado, requer ação do cliente/usuário
+
+O deploy real documentado na Seção 11.2 foi feito via **API oficial da
+Hostinger**, usando um **token de API fornecido pelo usuário na própria
+conversa daquela sessão** — por política de segurança, esse token nunca
+foi persistido em nenhum arquivo do repositório ou do ambiente, e portanto
+**não está disponível nesta sessão**. Não há, no código ou no ambiente
+atual, nenhuma credencial de Hostinger (token de API, usuário/senha de
+hPanel, ou chave SSH) que permita repetir o processo de deploy
+automaticamente.
+
+**Para concluir o deploy**, é necessário que o usuário forneça uma das
+opções abaixo:
+1. Um **token de API da Hostinger** (gerado em
+   `hpanel.hostinger.com` → API → criar token), para repetir o processo
+   documentado em 11.2 (upload do zip do código-fonte via API + trigger de
+   build remoto); ou
+2. **Acesso SSH** ao servidor (host, usuário, senha ou chave), para um
+   `git pull` + rebuild diretamente no servidor; ou
+3. Confirmação para o **próprio cliente/usuário** realizar o deploy
+   manualmente pelo hPanel (upload do código atualizado + "Rebuild" no
+   painel Node.js), usando este PR como a versão de código a publicar.
+
+Assim que uma dessas credenciais/confirmações for fornecida, o deploy
+pode ser concluído imediatamente — o código já está pronto, buildado com
+sucesso, e commitado.
