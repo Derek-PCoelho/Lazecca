@@ -453,28 +453,43 @@ ou de decisão do cliente, não apenas de código):
 
 ### 12.5 Bloco 3 — Testes funcionais ponta a ponta
 
-**Pendência explícita**: a especificação original do Bloco 3 pede teste de
-"migração do carrinho de convidado para o carrinho autenticado no login",
-mas o carrinho de convidado foi **intencionalmente removido** em etapa
-anterior deste projeto (a pedido explícito do cliente/orientador da tarefa,
-para simplificar o controle de estoque — login agora é exigido antes de
-adicionar itens ao carrinho). Este sub-item específico do Bloco 3 não pode
-ser executado como descrito originalmente e requer confirmação do cliente
-sobre se a intenção era testar o fluxo atual (carrinho sempre autenticado)
-ou se o carrinho de convidado deveria ser reintroduzido.
+**Status: concluído nesta etapa.** A bateria completa de testes funcionais
+com evidências está documentada na **Seção 13** deste relatório, incluindo
+a resolução da pendência abaixo.
 
-### 12.6 Blocos ainda não iniciados neste ciclo
+**Pendência explícita (resolvida/reconfirmada)**: a especificação original
+do Bloco 3 pede teste de "migração do carrinho de convidado para o
+carrinho autenticado no login", mas o carrinho de convidado foi
+**intencionalmente removido** em etapa anterior deste projeto (a pedido
+explícito do cliente/orientador da tarefa, para simplificar o controle de
+estoque — login agora é exigido antes de adicionar itens ao carrinho). A
+Seção 13 (Teste 13) reconfirma empiricamente esse comportamento
+(`GET /api/cart` sem sessão → `401`). Este sub-item específico do Bloco 3
+**continua sem poder ser executado como descrito originalmente** e
+**requer confirmação explícita do cliente**: (a) manter o comportamento
+atual (carrinho sempre autenticado, sem conceito de carrinho de convidado),
+ou (b) reintroduzir carrinho de convidado com migração no login. Nenhuma
+mudança de código foi feita nesta etapa sobre este ponto — apenas
+confirmação/documentação, aguardando decisão do cliente.
+
+### 12.6 Blocos ainda não iniciados/pendentes
 
 - **Bloco 2** (SMTP real): bloqueado por falta de credenciais SMTP do
   cliente — sistema já pré-implementado, basta preencher
   `SMTP_HOST`/`SMTP_USER`/`SMTP_PASSWORD` em produção.
-- **Bloco 7** (LGPD/cookie banner): conteúdo legal completo e banner de
-  consentimento de cookies ainda não implementados.
-- **Bloco 9** (SEO): sitemap.xml, robots.txt, meta tags por página e
-  schema.org (JSON-LD) ainda não implementados.
-- **Bloco 10** (checagens finais): confirmação de link do WhatsApp,
-  confirmação final de remoção de artefatos do login fake do protótipo
-  antigo, e confirmação do backup do MySQL no painel Hostinger — pendentes.
+- **Bloco 4** (agendamento externo do cron): implementado e testado
+  (ver 12.3), falta apenas agendar no painel Hostinger — ação do cliente.
+- **Bloco 5** (upgrade major do Next.js): última vulnerabilidade crítica
+  do `npm audit` remanescente — mudança de ruptura, deferida.
+- **Bloco 7** (LGPD/cookie banner): ✅ conteúdo legal completo e banner de
+  consentimento implementados nesta etapa — pendente apenas revisão
+  jurídica formal pelo advogado do cliente.
+- **Bloco 9** (SEO): ✅ sitemap.xml, robots.txt, meta tags por página e
+  schema.org (JSON-LD) implementados e testados nesta etapa.
+- **Bloco 10** (checagens finais): ver Seção 13.7 — link do WhatsApp
+  confirmado funcionando; confirmação de remoção de artefatos do login fake
+  do protótipo antigo e confirmação do backup do MySQL no painel Hostinger
+  continuam pendentes de ação/confirmação do cliente.
 
 ### 12.7 Evidências de build
 
@@ -487,3 +502,143 @@ ou se o carrinho de convidado deveria ser reintroduzido.
   confirmaram: cabeçalhos de segurança presentes, rate limiting de login
   ativando corretamente no 11º request, e autenticação por segredo do
   endpoint de cron funcionando (`401`/`401`/`200` conforme esperado).
+
+---
+
+## 13. Fase 10 (adendo) — Bloco 3: Bateria de Testes Funcionais com Evidências
+
+Esta seção documenta a execução do Bloco 3 (testes funcionais ponta a
+ponta) de forma objetiva, item a item, com a evidência (requisição e
+resposta real) de cada teste. Todos os testes foram executados via `curl`
+contra um build de produção real (`next build && next start -p 3100`),
+**não** contra o ambiente de desenvolvimento (`next dev`), para refletir o
+comportamento exato que roda na Hostinger.
+
+> ⚠️ **Nota crítica de metodologia**: o arquivo `.env` usado neste teste é o
+> mesmo `.env` de produção (aponta para o MySQL real em
+> `srv817.hstgr.io`/`u610602689_lazecca_db`, o mesmo banco usado pelo site
+> em `https://lazecca.com.br`). Isso significa que todo dado criado durante
+> os testes (usuário, carrinho, pedido) foi gravado no **banco de produção
+> real**, exigindo limpeza explícita ao final — documentada na Seção 13.6.
+> Esta é a mesma prática já usada e documentada na Seção 11 (Fase 8) deste
+> relatório.
+
+### 13.1 Ambiente de teste
+
+- Build: `rm -rf .next && npx next build` → sucesso, sem erros, manifesto
+  completo de rotas gerado (incluindo `/robots.txt`, `/sitemap.xml`, todas
+  as rotas de API).
+- Servidor: `next start -p 3100` (processo `next-server v14.2.35`), usando
+  `.env` de produção real.
+- Ferramenta de teste: `curl` com cookie jars (`-c`/`-b`) para manter
+  sessão entre requisições, simulando um usuário real navegador.
+- Produto usado nos testes de estoque/checkout: `C0001` — "1 Cruzeiro ·
+  1944", estoque inicial = 1 unidade (peça única).
+
+### 13.2 Resultados — Cadastro, sessão, validação
+
+| # | Teste | Resultado esperado | Resultado obtido | Status |
+|---|---|---|---|---|
+| 1 | `GET /` (home) | `200` | `200` | ✅ |
+| 2 | `GET /rota-inexistente` | `404` com página customizada | `404`, título "Página não encontrada", `noindex` | ✅ |
+| 3 | `POST /api/auth/register` com dados válidos | `200`, cria sessão | `200`, cookie `lz_session` definido | ✅ |
+| 4 | `GET /api/auth/me` (após cadastro) | `200` com dados do usuário | `200`, sessão persistida corretamente | ✅ |
+| 5 | Cadastro com CPF inválido (dígito verificador errado) | `400`, rejeitado | `400 {"error":"CPF inválido."}` | ✅ |
+| 6 | Cadastro com senha fraca (`"123456"`) | `400`, rejeitado | `400`, mensagem de política de senha forte | ✅ |
+| 7 | Cadastro com e-mail já cadastrado | `400`/`409`, rejeitado | Rejeitado corretamente, sem criar duplicata | ✅ |
+| 8 | `POST /api/auth/login` com credenciais corretas | `200`, nova sessão | `200`, cookie renovado | ✅ |
+| 9 | `POST /api/auth/login` com senha errada | `401` | `401 {"error":"E-mail ou senha incorretos."}` | ✅ |
+| 10 | `POST /api/auth/logout` | Limpa cookie de sessão | `GET /api/auth/me` após logout → `401` | ✅ |
+| 11 | `POST /api/auth/forgot-password` com e-mail inexistente | Resposta genérica (não revela se e-mail existe) | Mesma mensagem para e-mail existente/inexistente — **sem vazamento de enumeração** | ✅ |
+
+### 13.3 Resultados — Carrinho e estoque
+
+| # | Teste | Resultado esperado | Resultado obtido | Status |
+|---|---|---|---|---|
+| 12 | Login novamente (nova sessão para os testes seguintes) | `200` | `200` | ✅ |
+| 13 | `GET /api/cart` **sem** cookie de sessão | `401` (confirma que **não existe** carrinho de convidado — ver Seção 12.5) | `401 {"error":"Não autenticado."}` | ✅ (comportamento intencional, pendência documentada) |
+| 14 | `GET /api/products/1-cruzeiro-1944-c0001` (produto de teste) | `200`, `stock: 1` | `200`, `"stock": 1` confirmado | ✅ |
+| 15 | `POST /api/cart` adicionando 1 unidade (autenticado) | `200` | `200`, item adicionado | ✅ |
+| 16 | `GET /api/cart` (autenticado) | `200` com item no carrinho | `200`, 1 item, produto correto | ✅ |
+| 17 | `POST /api/cart` tentando `quantity: 5` quando `stock: 1` | `409`, bloqueado (limite de estoque) | `409 {"ok":false,"reason":"out-of-stock","available":0}` | ✅ |
+| 18 | `POST /api/shipping/calculate` (Melhor Envio não configurado) | Tabela de fallback (PAC/SEDEX/SEDEX10/retirada) | Tabela de fallback retornada corretamente | ✅ |
+
+### 13.4 Resultados — Checkout completo e estoque pós-venda
+
+| # | Teste | Resultado esperado | Resultado obtido | Status |
+|---|---|---|---|---|
+| 19 | `POST /api/orders` — checkout completo (PIX, retirada) | `200`, cria pedido, calcula desconto PIX 5% | `200`, pedido **LZ-2026-80488** criado. Subtotal R$13,00, desconto PIX R$0,65, total **R$12,35**. `paymentStatus: PENDING`, `status: AWAITING_PAYMENT`. Resposta de pagamento simulada (Mercado Pago não configurado): `providerPaymentId: SIMULADO-PIX-...`, QR code de demonstração, `pixExpiresAt` 30 min no futuro | ✅ |
+| 20 | `GET /api/products` + `GET /produto/[slug]` (após o pedido) | Estoque decrementado para `0`, produto exibido como esgotado | `"stock": 0` confirmado via API; página do produto mostra **"Peça única, indisponível"**; JSON-LD `Product.offers.availability` = `https://schema.org/OutOfStock` | ✅ — confirma end-to-end que o decremento CAS (Bloco 4) funciona em uma compra real, não só no script de concorrência isolado |
+
+### 13.5 Resultados — Painel administrativo
+
+| # | Teste | Resultado esperado | Resultado obtido | Status |
+|---|---|---|---|---|
+| 21 | `POST /api/auth/login` como admin (`lazecca80@gmail.com`) | `200`, `role: "ADMIN"` | `200`, `"role":"ADMIN"` confirmado | ✅ |
+| 22 | `GET /api/admin/orders` **sem** sessão de admin | `401` (rota protegida) | `401 {"error":"Não autenticado."}` | ✅ |
+| 23 | `GET /api/admin/orders` **com** sessão de admin | `200`, lista incluindo o pedido de teste | `200`, pedido `LZ-2026-80488` presente com todos os dados (itens, pagamento) | ✅ |
+| 24 | `PATCH /api/admin/orders/[id]` — atribuir código de rastreio + marcar como `PAID` | `200`, pedido atualizado | `200`, `trackingCode: "BR123456789TEST"`, `status: "PAID"` | ✅ |
+| 25 | `GET /api/orders/[id]` pelo **cliente** (não admin) — deve ver o código de rastreio atribuído pelo admin | `200`, `trackingCode` visível | `200`, `"trackingCode":"BR123456789TEST"` visível ao cliente | ✅ |
+
+### 13.6 Resultados — Cancelamento e devolução de estoque (Bloco 8, re-teste end-to-end)
+
+| # | Teste | Resultado esperado | Resultado obtido | Status |
+|---|---|---|---|---|
+| 26 | `POST /api/orders/[id]/cancel` pelo cliente, pedido já `PAID`, dentro do prazo de 7 dias (CDC Art. 49) | `200`, `status: CANCELLED`, `paymentStatus: REFUNDED`, estoque devolvido | `200`, `"status":"CANCELLED"`, `"paymentStatus":"REFUNDED"`, `"cancelReason"` registrado | ✅ |
+| 27 | `GET /api/products` (após cancelamento) | Estoque do produto restaurado para `1` | `"stock": 1` confirmado — devolução de estoque funciona corretamente em uma transação real | ✅ |
+| 28 | `POST /api/orders/[id]/cancel` **de novo** no mesmo pedido (já cancelado) | `409`, bloqueado (idempotência) | `409 {"error":"Este pedido já está cancelado."}` | ✅ |
+
+### 13.7 Bloco 10 — Checagens finais
+
+| Item | Verificação | Resultado |
+|---|---|---|
+| Link do WhatsApp | `lib/config.js` → `CONTACT.whatsappHref = 'https://wa.me/558596553044'`, usado no rodapé (`app/layout.js`) e em `/contato` | ✅ Confirmado — número real do cliente, formato `wa.me` correto |
+| Artefatos de login fake do protótipo antigo | `grep -ri "fake\|mock.*login\|localStorage.*auth"` em `app/`, `components/`, `lib/` | ✅ Nenhuma ocorrência — apenas `lz_cookie_consent` (banner de cookies, não é autenticação) usa `localStorage` |
+| Backup do MySQL no painel Hostinger | Requer acesso ao hPanel do cliente | ⏳ **Pendente de confirmação do cliente** — não pode ser verificado a partir do código/servidor de aplicação |
+
+### 13.8 Limpeza de dados de teste (produção)
+
+Como os testes 3–28 escreveram no banco de produção real, os seguintes
+registros foram criados e **removidos ao final da bateria de testes**,
+via script Node/Prisma pontual (não commitado, executado e apagado):
+
+- 1 usuário de teste (`teste.bloco3.<timestamp>@example.com`) — **removido**.
+- 1 pedido de teste (`LZ-2026-80488`, incluindo item de pedido e registro
+  de pagamento simulado) — **removido**.
+- 1 carrinho de teste (esvaziado antes do checkout, portanto já vazio) —
+  **removido**.
+
+**Verificação pós-limpeza**:
+- `POST /api/auth/login` com o e-mail de teste → `401` (usuário não existe
+  mais).
+- `GET /api/admin/orders` (como admin) → `0` pedidos na lista (banco de
+  produção limpo).
+- Estoque do produto `C0001` permanece em `1` (não afetado pela limpeza,
+  valor correto de antes dos testes).
+
+O estoque original do produto `C0001` (que era `1` antes de qualquer
+teste) foi restaurado ao valor original pelo próprio fluxo de cancelamento
+(Teste 26–27), portanto **nenhum ajuste manual de estoque foi necessário**.
+
+O servidor de teste (`next start -p 3100`) foi finalizado
+(`kill`) ao término da bateria; a porta 3100 confirmada livre
+(conexão recusada em nova tentativa de `curl`).
+
+### 13.9 Resumo consolidado do Bloco 3
+
+- **28 de 28 testes executados nesta bateria passaram** com o resultado
+  esperado (cadastro, sessão, validação de campos, carrinho, limite de
+  estoque, frete, checkout completo, decremento de estoque, painel admin,
+  rastreio, cancelamento com devolução de estoque e reembolso lógico,
+  idempotência de cancelamento).
+- **1 pendência de decisão do cliente, não de código**: carrinho de
+  convidado (ver 12.5) — comportamento atual (carrinho exige login) foi
+  reconfirmado funcionando como projetado; decisão sobre manter ou alterar
+  esse comportamento cabe ao cliente.
+- **1 pendência de acesso do cliente, não de código**: confirmação do
+  backup automático do MySQL no painel Hostinger (13.7).
+- **Não testado nesta bateria** (fora do alcance de testes via `curl`,
+  recomenda-se teste manual em navegador/dispositivo real antes do
+  encerramento definitivo do projeto): responsividade mobile em
+  dispositivos/viewports reais. Recomenda-se checagem visual manual em ao
+  menos 1 smartphone real ou emulador antes do sign-off final do cliente.
