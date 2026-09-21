@@ -933,3 +933,212 @@ o usuário **revogue/rotacione esse token** em
 `hpanel.hostinger.com` → API assim que possível, gerando um novo token
 caso precise de acesso futuro por API (a mesma recomendação já havia sido
 feita para o token usado na Seção 11.3).
+
+---
+
+## 16. Frente A — CRUD completo de produtos no painel admin (PR #14)
+
+### 16.1 Diagnóstico do usuário
+
+O usuário revisou o painel admin (`/admin/produtos` e `/admin/produtos/[id]`)
+e identificou uma lacuna crítica: **não havia forma de criar produtos,
+excluir produtos, fazer upload de fotos, nem editar a maior parte dos ~30
+campos da ficha numismática** (denominação, ano, país, metal, peso,
+diâmetro, estado de conservação, raridade, série, variedade, defeitos,
+observações, história, etc.) — o admin só permitia editar 5 campos básicos
+(nome, descrição, preço, estoque, categoria).
+
+### 16.2 Implementação
+
+Com autorização explícita do usuário para implementar (não apenas
+planejar), foi construído o CRUD completo:
+
+- **`lib/adminProduct.js`**: utilitários compartilhados —
+  `ALLOWED_PRODUCT_FIELDS` (lista dos ~30 campos editáveis),
+  `coerceProductData()` (validação/conversão de tipos por campo),
+  `slugify()`, `nextLegacyCode()` (geração sequencial `Cxxxx`).
+- **`POST /api/admin/products`**: criação de produto com `legacyCode` e
+  `slug` gerados automaticamente (com verificação de colisão).
+- **`PATCH /api/admin/products/[id]`**: expandido de 5 para ~30 campos.
+- **`DELETE /api/admin/products/[id]`**: proteção contra exclusão de
+  produtos já vendidos (verifica `OrderItem.count`, retorna `409` se > 0,
+  preservando histórico de pedidos); quando permitido, limpa
+  `CartItem`/`Review` numa transação antes de excluir.
+- **Upload de imagens** (`/api/admin/products/[id]/images`): multipart
+  upload sem dependências externas (`request.formData()`), salva em
+  `public/assets/products/uploads/`, com reordenação via drag-and-drop
+  (HTML5 nativo) e exclusão individual (`/images/[imageId]`).
+- **`GET /api/admin/categories`**: expõe `id` das categorias (necessário
+  para o `<select>` do formulário, já que o endpoint público só expõe
+  `slug`/`name`).
+- **UI**: `ProductForm.js` (formulário completo seccionado),
+  `ProductImagesManager.js` (upload/reorder/delete de imagens),
+  páginas `/admin/produtos/novo` (criar) e `/admin/produtos/[id]`
+  (editar, reescrita), lista `/admin/produtos` com botão "+ Novo produto"
+  e exclusão inline.
+
+### 16.3 Verificação
+
+Build local (`next build`) sem erros. Testado via `curl` contra o banco de
+dados **real de produção**: criação de produto (C0140), upload de 2
+imagens, reordenação, edição completa, verificação na página pública,
+exclusão de imagem, exclusão de produto, e teste da proteção de exclusão
+(criação de um `Order`/`OrderItem` real de teste para confirmar o bloqueio
+`409`) — tudo com limpeza completa ao final, banco verificado de volta ao
+baseline original (139 produtos, 0 pedidos).
+
+**Pull Request**: https://github.com/Derek-PCoelho/Lazecca/pull/14
+(mergeado).
+
+---
+
+## 17. Frente B — Deploy Hostinger + configuração de SMTP
+
+Com autorização explícita do usuário ("prossiga... no 3, pode já
+implementar também"), e um novo token de API da Hostinger fornecido na
+conversa, foram executadas as seguintes ações:
+
+### 17.1 Diagnóstico pré-deploy
+
+Antes de reimplantar, foi confirmado que a produção estava desatualizada:
+
+- Hash do CSS em produção (`5e6b1d0cd988abb6.css`) **diferia** do hash do
+  build local atual (`508736cc97911ec0.css`), confirmando que o deploy
+  anterior (Seção 15.8) não incluía o PR #13 (perfil/trocar senha) nem o
+  PR #14 (CRUD de produtos).
+- `GET /admin/perfil` em produção retornava **404 real** (comparado a uma
+  rota inexistente de controle, que também retorna 404 — mas a rota
+  `/admin/produtos/novo`, que **deveria** redirecionar para
+  `/admin/login`, sim redirecionava, confirmando que o build de produção
+  não continha as rotas dos PRs #13/#14 ainda).
+- O favicon em produção (`c30c7d4...`) tinha **hash MD5 diferente** do
+  favicon corrigido local (`9aa6857...`), confirmando que a correção do
+  favicon (commit `243e610`, "favicon real da aba") nunca havia sido
+  enviada ao servidor em nenhum deploy anterior.
+
+### 17.2 Investigação de SMTP — conclusão definitiva
+
+Investigação exaustiva da API da Hostinger para determinar como
+provisionar uma conta de e-mail para `lazecca.com.br`:
+
+- `GET /api/mail/v1/orders` (com e sem filtros de domínio/status/trial) →
+  sempre `{"data":[],...}` — **nenhum pedido de e-mail (Mail/Titan)
+  provisionado** nesta conta.
+- `GET /api/billing/v1/subscriptions` → confirma 3× domínio `.COM`, 1×
+  `.COM.BR`, 1× `Unlimited Web Hosting` (plano `hostinger_business_v5`) —
+  **nenhuma assinatura de e-mail dedicada**.
+- Download completo do OpenAPI spec (`developers.hostinger.com/openapi/
+  openapi.json`, 363 endpoints) confirmou que **não existe nenhum
+  endpoint de e-mail/mailbox sob o namespace `/api/hosting/v1/*`** — a
+  única API de e-mail é `/api/mail/v1/*`, que é um **produto separado**
+  (Hostinger Mail / Titan Email), exigindo um "mail order" próprio antes
+  de se poder criar uma mailbox (`POST /api/mail/v1/orders/{orderId}/
+  mailboxes`).
+- `GET /api/billing/v1/catalog` confirmou os planos de e-mail disponíveis
+  para compra (`Starter/Standard/Premium Business Email`, a partir de
+  ~R$ 41,88/ano no primeiro ano) — mas **nenhuma compra foi realizada**
+  nesta sessão, pois é uma decisão financeira do cliente.
+- Pesquisa web confirmou o mecanismo real: planos de hospedagem da
+  Hostinger contratados a partir de 18/03/2025 **incluem 2 mailboxes
+  gratuitas por 12 meses**, mas essas mailboxes **precisam ser
+  reivindicadas manualmente uma única vez** pelo dashboard/hPanel
+  (botão "Claim free email" em hPanel → Emails) — este processo de
+  "claim" **não está exposto na API pública** (não existe endpoint
+  equivalente em nenhum namespace testado: `hosting`, `mail`, `billing`).
+
+**Conclusão**: não é possível provisionar/configurar o SMTP puramente via
+API neste momento. Duas opções ficam à disposição do cliente:
+1. Acessar `hpanel.hostinger.com` → **Emails** → clicar em **"Claim free
+   email"** (mailbox gratuita incluída no plano Unlimited Web Hosting por
+   12 meses) e criar uma caixa (ex.: `contato@lazecca.com.br`), depois
+   fornecer usuário/senha para configuração de `SMTP_HOST`/`SMTP_USER`/
+   `SMTP_PASSWORD`; ou
+2. Comprar um plano de e-mail dedicado (Starter/Standard/Premium Business
+   Email) via hPanel ou autorizar a compra via API
+   (`POST /api/billing/v1/orders`).
+
+Enquanto isso não for feito, o sistema mantém o comportamento de
+fallback já implementado (e-mails de redefinição de senha são logados no
+console do servidor em vez de enviados).
+
+### 17.3 Deploy executado
+
+Metodologia idêntica às Seções 11.2/15.8:
+
+1. **Validação do token**: `GET /api/hosting/v1/websites` confirmou
+   `lazecca.com.br`, `u610602689`.
+2. **Configurações de build recuperadas**: `node_version: 20`,
+   `app_type: "next"`, `output_directory: ".next"`, `build_script:
+   "build"`, `package_manager: "npm"` (sem alterações necessárias).
+3. **Empacotamento**: `web/` completo (242 arquivos, ~14,9 MB),
+   excluindo `node_modules/`, `.next/`, `.git/`, `.env*`, `*.log` —
+   verificado manualmente que nenhum `.env` foi incluído.
+4. **Upload via protocolo TUS 1.0.0**: credenciais geradas via
+   `POST /api/hosting/v1/files/upload-urls`; `POST` inicial → `201
+   Created`; `PATCH` do conteúdo → `204 No Content`, `Upload-Offset`
+   final (`14939319`) igual ao tamanho exato do arquivo.
+5. **Variáveis de ambiente**: como o endpoint faz *full-replace*, todas
+   as 11 chaves foram reenviadas com valores reais lidos do `.env` local
+   (`DATABASE_URL`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `ADMIN_EMAIL`,
+   `ADMIN_INITIAL_PASSWORD`, `MELHOR_ENVIO_CEP_ORIGEM`, `SMTP_PORT`,
+   `CONTACT_EMAIL`, `NEXT_PUBLIC_SITE_URL`,
+   `NEXT_PUBLIC_SHOW_SAMPLE_PRODUCTS`) **mais a chave que faltava**:
+   `CRON_SECRET` (presente localmente desde o Bloco 4, mas nunca havia
+   sido enviada ao servidor). `PUT` retornou `200 {"message":"Request
+   accepted"}`; `GET` de confirmação mostrou as 11 chaves (mascaradas).
+6. **Build remoto disparado**: `POST .../nodejs/builds` com
+   `source_type: "archive"`. UUID: `01a0c3b5-caef-728c-91eb-8b3214329d88`.
+7. **Build concluído** (`state: "completed"`) após ~2 minutos de
+   polling. Logs revisados: `next build` sem erros, todas as rotas novas
+   presentes no manifesto (`/admin/perfil`, `/admin/produtos/novo`,
+   `/api/admin/products/[id]/images`, `/api/admin/products/[id]/images/
+   [imageId]`, `/api/admin/categories`, etc.).
+
+### 17.4 Verificação pós-deploy
+
+Testes diretos contra `https://lazecca.com.br` (produção real):
+
+- **Hash do CSS**: `508736cc97911ec0.css` em produção **idêntico** ao
+  hash do build local mais recente — confirma que o código novo (PRs
+  #13 e #14) está ativo.
+- **`/admin/perfil`**: agora retorna `307` (redirect para login),
+  **não mais `404`** — confirma que a rota de perfil/trocar senha do
+  PR #13 está presente em produção.
+- **`/admin/produtos/novo`**: `307` (redirect para login) — confirma que
+  a página de criação de produto do PR #14 está presente.
+- **Favicon**: MD5 do favicon em produção agora **idêntico** ao favicon
+  corrigido local — problema relatado pelo usuário ("ícone preto com
+  triângulo genérico") resolvido.
+- **Conectividade com banco de dados**: `GET /api/products` retornou
+  135 produtos reais e 4 categorias (contagens inalteradas,
+  confirmando que o rebuild não afetou os dados).
+- **Smoke test completo**: todas as páginas principais (`/`, `/catalogo`,
+  `/diario`, `/sobre`, `/autenticidade`, `/conta`, `/contato`,
+  `/carrinho`, `/checkout`, `/admin/login`, `/politica-de-privacidade`,
+  `/termos-de-uso`, `/produto/[slug]`) retornaram `HTTP 200`.
+- Arquivo `.zip` de deploy usado no upload **não ficou acessível
+  publicamente** (`404` ao tentar baixá-lo diretamente).
+
+**Conclusão**: deploy concluído com sucesso e totalmente verificado.
+Todas as 3 perguntas do usuário estão respondidas:
+1. **Hostinger**: sim, tudo foi enviado e reimplantado agora (CRUD de
+   produtos, correção do perfil admin, favicon).
+2. **Favicon**: corrigido — a causa era um deploy desatualizado (o
+   código já estava correto desde uma sessão anterior, só não havia sido
+   reimplantado); confirmado idêntico byte-a-byte em produção.
+3. **SMTP**: não pôde ser configurado nesta sessão porque a Hostinger não
+   expõe via API o processo de "reivindicar" (claim) a mailbox gratuita
+   incluída no plano — isso requer uma ação manual única do cliente no
+   hPanel (Seção 17.2 detalha as duas opções disponíveis).
+
+### 17.5 Pendências remanescentes
+
+- **SMTP**: aguardando decisão/ação do cliente (Seção 17.2) — reivindicar
+  mailbox gratuita no hPanel ou comprar plano de e-mail dedicado. Assim
+  que houver credenciais, basta preencher `SMTP_HOST`/`SMTP_USER`/
+  `SMTP_PASSWORD` nas variáveis de ambiente e rodar um novo build (nenhuma
+  mudança de código necessária).
+- **Rotação de credenciais recomendada**: o token de API da Hostinger
+  usado nesta sessão foi compartilhado em texto puro no chat —
+  recomenda-se fortemente que o usuário revogue/rotacione esse token em
+  `hpanel.hostinger.com` → API.
